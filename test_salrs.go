@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/cryptosuite/salrs-go/salrs"
+	"time"
 )
 
 const (
-	r = 10 //dpk ring scale
+	r     = 10   //dpk ring scale
+	round = 10.0 //round of test
 )
 
 func main() {
@@ -31,49 +33,96 @@ func main() {
 	dpkring.R = r
 
 	//setup
-	salrs.Setup()
+	start := float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		salrs.Setup()
+	}
+	end := float64(time.Now().UnixNano())
+	fmt.Printf("Setup time consumed:%vs\n", (end-start)/1000000000/round)
+	fmt.Printf("Setup passed\n\n")
 
 	//choose generating master seed from passphase or generating seed of master key to generate a seed for master key
 	//both codes are tested and provided below
 
 	//generate master seed from passphase
-	mseed, err = salrs.GenerateMasterSeedFromPassPhase(msg1)
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		mseed, err = salrs.GenerateMasterSeedFromPassPhase(msg1)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Generate Master Seed From PassPhase time consumed:%vs\n", (end-start)/1000000000/round)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Printf("Generate Master Seed From PassPhase passed\n\n")
 	}
 
-	/*
-		//generate seed of master key
+	//generate seed of master key
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
 		mseed, err = salrs.GenerateMasterSeed()
-		if err != nil {
-			fmt.Println(err)
-		}
-	*/
-
-	//genereta master key
-	mpk, msvk, mssk, err = salrs.GenerateMasterKey(mseed)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Generate Master Seed time consumed:%vs\n", (end-start)/1000000000/round)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Printf("Generate Master Seed passed\n\n")
+	}
+
+	//genereta master key
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		mpk, msvk, mssk, err = salrs.GenerateMasterKey(mseed)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Generate Master Key time consumed:%vs\n", (end-start)/1000000000/round)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("Generate Master Key passed\n\n")
 	}
 
 	//test of the Serialize & Deseralize of master key
-	mpkbytestr = mpk.Serialize()
-	mpk, err = salrs.DeseralizeMasterPubKey(mpkbytestr)
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		mpkbytestr = mpk.Serialize()
+		mpk, err = salrs.DeseralizeMasterPubKey(mpkbytestr)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Serialize and Deseralize of master public key time consumed:%vs\n", (end-start)/1000000000/round)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Printf("Serialize and Deseralize of master public key passed\n\n")
 	}
 
 	//generate derived public key
-	dpk1, err = salrs.GenerateDerivedPubKey(mpk)
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		dpk1, err = salrs.GenerateDerivedPubKey(mpk)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Generate Derived Public Key time consumed:%vs\n", (end-start)/1000000000/round)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Printf("Generate Derived Public Key passed\n\n")
 	}
 
 	//test of the Serialize & Deseralize of derived public key
-	dpkbytestr = dpk1.Serialize()
-	dpk1, err = salrs.DeseralizeDerivedPubKey(dpkbytestr)
+
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		dpkbytestr = dpk1.Serialize()
+		dpk1, err = salrs.DeseralizeDerivedPubKey(dpkbytestr)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Serialize and Deseralize of derived public key time consumed:%vs\n", (end-start)/1000000000/round)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Printf("Serialize and Deseralize of master public key passed\n\n")
 	}
 
 	//generate a dpkring for test
@@ -90,13 +139,29 @@ func main() {
 	dpk1 = &dpkring.Dpk[0]
 
 	//check the owner of a dervied public key
-	flag = salrs.CheckDerivedPubKeyOwner(dpk1, mpk, msvk)
-	fmt.Println(flag)
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		flag = salrs.CheckDerivedPubKeyOwner(dpk1, mpk, msvk)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Check Derived Public Key Owner time consumed:%vs\n", (end-start)/1000000000/round)
+	if flag == true {
+		fmt.Printf("Check Derived Public Key Owner passed\n\n")
+	} else {
+		fmt.Printf("Check Derived Public Key Owner failed\n\n")
+	}
 
 	//signature
-	sig1, err = salrs.Sign(msg1, dpkring, dpk1, mpk, msvk, mssk)
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		sig1, err = salrs.Sign(msg1, dpkring, dpk1, mpk, msvk, mssk)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Signature time consumed(ring size = %v):%vs\n", r, (end-start)/1000000000/round)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Printf("Signature passed\n\n")
 	}
 	sig2, err = salrs.Sign(msg2, dpkring, dpk1, mpk, msvk, mssk)
 	if err != nil {
@@ -104,15 +169,31 @@ func main() {
 	}
 
 	//verify signature
-	keyimage1, flag = salrs.Verify(msg1, dpkring, sig1)
-	fmt.Println(flag)
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		keyimage1, flag = salrs.Verify(msg1, dpkring, sig1)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("verify time consumed(ring size = %v):%vs\n", r, (end-start)/1000000000/round)
+	if flag == true {
+		fmt.Printf("Verify passed\n\n")
+	} else {
+		fmt.Printf("Verify failed\n\n")
+	}
 	keyimage2, flag = salrs.Verify(msg2, dpkring, sig2)
-	fmt.Println(flag)
 
 	//link
-	flag = salrs.Link(msg1, dpkring, sig1, msg2, dpkring, sig2)
-	fmt.Println(flag)
+	start = float64(time.Now().UnixNano())
+	for i = 0; i < round; i++ {
+		flag = salrs.Link(msg1, dpkring, sig1, msg2, dpkring, sig2)
+	}
+	end = float64(time.Now().UnixNano())
+	fmt.Printf("Link time consumed(ring size = %v):%vs\n", r, (end-start)/1000000000/round)
+	if flag == true {
+		fmt.Printf("Link passed\n\n")
+	} else {
+		fmt.Printf("Link failed\n\n")
+	}
 
 	flag = salrs.EqualI(keyimage1.I, keyimage2.I)
-	fmt.Println(flag)
 }
