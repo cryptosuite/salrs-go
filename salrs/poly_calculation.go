@@ -524,3 +524,23 @@ func Test() {
 	fmt.Println(c)
 }
 */
+
+/*
+func polyMultiplication(a poly, b poly)(c poly){
+	var tmp512 [512]int64
+	var i, j int
+	var ans poly
+	for i = 0; i < 512; i++{
+		tmp512[i] = 0
+	}
+	for i = 0; i < N; i++{
+		for j = 0; j < N; j++{
+			tmp512[i + j] += reduce(bigNumberMultiplication(a.coeffs[i], b.coeffs[j]))
+		}
+	}
+	for i = 0; i < N ; i++{
+		ans.coeffs[i] = reduce(tmp512[i] - tmp512[i + N])
+	}
+	return ans
+}
+*/
