@@ -121,3 +121,26 @@ func EqualI(I1 polyvecm, I2 polyvecm) (flag bool) {
 	}
 	return f
 }
+
+func Equaldpk(dpk1 DerivedPubKey, dpk2 DerivedPubKey) (flag bool) {
+	var i, j, ii int
+	var f bool
+	f = true
+	if dpk1.t != dpk2.t {
+		f = false
+		return f
+	}
+	i = len(dpk1.c)
+	j = len(dpk2.c)
+	if i != j {
+		f = false
+		return f
+	}
+	for ii = 0; ii < i; ii++ {
+		if dpk1.c[ii] != dpk2.c[ii] {
+			f = false
+			return f
+		}
+	}
+	return f
+}

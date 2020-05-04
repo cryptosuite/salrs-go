@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/cryptosuite/salrs-go/salrs"
+	//"github.com/cryptosuite/salrs-go/salrs"
+	"github.com/kbb-98/salrs-go-1/salrs"
 	"time"
 )
 
@@ -25,12 +26,12 @@ func main() {
 	sig2 := &salrs.Signature{}
 	keyimage1 := &salrs.KeyImage{}
 	keyimage2 := &salrs.KeyImage{}
-	mseed := make([]byte, salrs.MasterSeedByteLen)
 	msg1 := []byte{'t', 'o', 'd', 'a', 'y'}
 	msg2 := []byte{'t', 'o', 'd', 'a', 'x', 'y'}
 	mpkbytestr := make([]byte, salrs.MpkByteLen)
 	dpkbytestr := make([]byte, salrs.DpkByteLen)
 	dpkring.R = r
+	mseed := []byte{'a', 'b', 'c'}
 
 	//setup
 	start := float64(time.Now().UnixNano())
@@ -44,6 +45,7 @@ func main() {
 	//choose generating master seed from passphase or generating seed of master key to generate a seed for master key
 	//both codes are tested and provided below
 
+	/*
 	//generate master seed from passphase
 	start = float64(time.Now().UnixNano())
 	for i = 0; i < round; i++ {
@@ -69,6 +71,7 @@ func main() {
 	} else {
 		fmt.Printf("Generate Master Seed passed\n\n")
 	}
+	 */
 
 	//genereta master key
 	start = float64(time.Now().UnixNano())
