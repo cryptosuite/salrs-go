@@ -651,7 +651,6 @@ func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 	if len(mpkByteStr) != MpkByteLen {
 		return nil, errors.New("invalid mpk byte length")
 	}
-	var erro error
 	masterPubKey := &MasterPubKey{}
 	//	to do
 	var i int
