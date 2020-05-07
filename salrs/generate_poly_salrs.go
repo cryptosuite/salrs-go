@@ -501,7 +501,7 @@ func hTheta(m []byte, mlen int, dpkring *DpkRing, w polyveck, v polyvecm, I poly
 		tmpbuf1         = make([]byte, mlen)
 		tmpbuf2         = make([]byte, N)
 		tmpbuf3         = make([]byte, PackTByteLen)
-		tmpbuf4         = make([]byte, PackYByteLen)
+		tmpbuf4         = make([]byte, PackIByteLen)
 		dpkbyte         = make([]byte, DpkByteLen)
 		count           = 0
 		C               poly
