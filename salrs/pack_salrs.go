@@ -15,7 +15,7 @@ import "errors"
 func packPolyveckQ(t polyveck) (tchar []byte) {
 	var i, j int
 	var tmp [2]int64
-	var tch := make([]byte, PackTByteLen)
+	tch := make([]byte, PackTByteLen)
 	for i = 0; i < K; i++ {
 		for j = 0; j < 128; j++ {
 			tmp[0] = t.vec[i].coeffs[2*j] + Q2
@@ -77,7 +77,7 @@ func unpackPolyveckQ(tchar []byte) (t polyveck) {
 func packPolyveclEta(s polyvecl) (schar []byte) {
 	var i, j int
 	var tmp [8]int64
-	var sch := make([]byte, PackSByteLen)
+	sch := make([]byte, PackSByteLen)
 	for i = 0; i < L; i++ {
 		for j = 0; j < 32; j++ {
 			tmp[0] = s.vec[i].coeffs[8*j+0] + Eta
@@ -144,7 +144,7 @@ func unpackPolyveclEta(schar []byte) (s polyvecl) {
 func packPolyveclGmte(z polyvecl) (zchar []byte) {
 	var i, j int
 	var tmp [4]int64
-	var zch := make([]byte, PackZByteLen)
+	zch := make([]byte, PackZByteLen)
 	for i = 0; i < L; i++ {
 		for j = 0; j < 64; j++ {
 			tmp[0] = z.vec[i].coeffs[4*j+0] + GammaMinusTwoEtaTheta
@@ -215,7 +215,7 @@ func unpackPolyveclGmte(zchar []byte) (z polyvecl) {
 func packPolyvecmQ(m polyvecm) (mChar []byte) {
 	var ii, j int
 	var tmp [2]int64
-	var mCh := make([]byte, PackIByteLen)
+	mCh := make([]byte, PackIByteLen)
 	for ii = 0; ii < M; ii++ {
 		for j = 0; j < 128; j++ {
 			tmp[0] = m.vec[ii].coeffs[2*j] + Q2
@@ -513,7 +513,7 @@ func packSig(sig Signature) (signature []byte) {
 	/* Encode z*/
 	//printf("encode z\n")
 
-	var slicez := make([]byte, PackZByteLen)
+	slicez := make([]byte, PackZByteLen)
 	for i2 = 0; i2 < sig.r; i2++ {
 		slicez = packPolyveclGmte(sig.z[i2])
 		for j = 0; j < PackZByteLen; j++ {
@@ -523,7 +523,7 @@ func packSig(sig Signature) (signature []byte) {
 
 	/* Encode I*/
 	//printf("encode I\n")
-	var sliceI := make([]byte, PackIByteLen)
+	sliceI := make([]byte, PackIByteLen)
 	//var sliceI = sig[r * PackZByteLen:r * PackZByteLen + PackIByteLen]
 	sliceI = packPolyvecmQ(sig.I)
 	for i2 = 0; i2 < PackIByteLen; i2++ {
@@ -579,7 +579,7 @@ func unpackSig(signa []byte) (sig Signature, err error) {
 
 	/* Decode z*/
 	var zz = make([]polyvecl, sigg.r)
-	var slicez := make([]byte, PackZByteLen)
+	slicez := make([]byte, PackZByteLen)
 	for ii = 0; ii < sigg.r; ii++ {
 		for j = 0; j < PackZByteLen; j++ {
 			slicez[j] = signa[ii*PackZByteLen+j]
@@ -589,7 +589,7 @@ func unpackSig(signa []byte) (sig Signature, err error) {
 	sigg.z = zz
 
 	/* Decode I */
-	var sliceI := make([]byte, PackIByteLen)
+	sliceI := make([]byte, PackIByteLen)
 	for ii = 0; ii < PackIByteLen; ii++ {
 		sliceI[ii] = signa[ii+sigg.r*PackZByteLen]
 	}
