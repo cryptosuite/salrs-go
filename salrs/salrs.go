@@ -22,7 +22,7 @@ This file contains all the public constant, type, and functions that are availab
 //	public const def	begin
 const PassPhaseByteLen = 32
 
-var pkem *kyber.ParameterSet = new(kyber.ParameterSet)
+//var pkem *kyber.ParameterSet = new(kyber.ParameterSet)
 
 const (
 	N                     = 256
@@ -53,12 +53,12 @@ const (
 )
 
 var (
-	MpkByteLen    = pkem.CryptoPublicKeyBytes() + PackTByteLen
-	PKKEMByteLen  = pkem.CryptoPublicKeyBytes()
-	MskByteLen    = pkem.CryptoSecretKeyBytes() + PackSByteLen
-	SKKEMByteLen  = pkem.CryptoSecretKeyBytes()
-	DpkByteLen    = pkem.CryptoCiphertextBytes() + PackTByteLen
-	CipherByteLen = pkem.CryptoCiphertextBytes()
+	MpkByteLen    = kyber.Kyber768.CryptoPublicKeyBytes() + PackTByteLen
+	PKKEMByteLen  = kyber.Kyber768.CryptoPublicKeyBytes()
+	MskByteLen    = kyber.Kyber768.CryptoSecretKeyBytes() + PackSByteLen
+	SKKEMByteLen  = kyber.Kyber768.CryptoSecretKeyBytes()
+	DpkByteLen    = kyber.Kyber768.CryptoCiphertextBytes() + PackTByteLen
+	CipherByteLen = kyber.Kyber768.CryptoCiphertextBytes()
 )
 
 //	public const def	end=1000
@@ -109,7 +109,7 @@ type KeyImage struct {
 //	note that the sizes depend on the PP, we may need to put these constants together with PP.
 
 func Setup() {
-	pkem = kyber.Kyber768
+	//pkem = kyber.Kyber768
 }
 
 /*
