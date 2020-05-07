@@ -655,6 +655,7 @@ func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 	//	to do
 	var i int
 	var tmp1, tmp2 byte
+	var erro error
 	b := make([]byte, MpkByteLen/2)
 	btmp := make([]byte, pkem.CryptoPublicKeyBytes())
 	for i = 0; i < MpkByteLen/2; i++ {
@@ -674,6 +675,9 @@ func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 		btmp[i] = b[i]
 	}
 	masterPubKey.pkkem, erro = pkem.PublicKeyFromBytes(btmp)
+	if erro != nil{
+		return nil, errors.New("pubkey from byte failed")
+	}
 	sliceMpk := make([]byte, PackTByteLen)
 	for i = 0; i < PackTByteLen; i++ {
 		sliceMpk[i] = b[PKKEMByteLen+i]
