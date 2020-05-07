@@ -12,10 +12,10 @@ import "errors"
 * Arguments:    - polyveck *t: pointer to input vector t
 *              - unsigned char *t_char: pointer to output array
 **************************************************/
-func packPolyveckQ(t polyveck) (tchar [PackTByteLen]byte) {
+func packPolyveckQ(t polyveck) (tchar []byte) {
 	var i, j int
 	var tmp [2]int64
-	var tch [PackTByteLen]byte
+	var tch := make([]byte, PackTByteLen)
 	for i = 0; i < K; i++ {
 		for j = 0; j < 128; j++ {
 			tmp[0] = t.vec[i].coeffs[2*j] + Q2
@@ -42,7 +42,7 @@ func packPolyveckQ(t polyveck) (tchar [PackTByteLen]byte) {
  * Arguments:   - unsigned char *t_char: pointer to input array
  *              - polyveck *t: pointer to output vector t
  **************************************************/
-func unpackPolyveckQ(tchar [PackTByteLen]byte) (t polyveck) {
+func unpackPolyveckQ(tchar []byte) (t polyveck) {
 	var i, j int
 	var tmp [2]int64
 	var T polyveck
@@ -74,10 +74,10 @@ func unpackPolyveckQ(tchar [PackTByteLen]byte) (t polyveck) {
  * Arguments:    - polyvecl *s: pointer to input vector s
  *              - unsigned char *s_char: pointer to output array
  **************************************************/
-func packPolyveclEta(s polyvecl) (schar [PackSByteLen]byte) {
+func packPolyveclEta(s polyvecl) (schar []byte) {
 	var i, j int
 	var tmp [8]int64
-	var sch [PackSByteLen]byte
+	var sch := make([]byte, PackSByteLen)
 	for i = 0; i < L; i++ {
 		for j = 0; j < 32; j++ {
 			tmp[0] = s.vec[i].coeffs[8*j+0] + Eta
@@ -105,7 +105,7 @@ func packPolyveclEta(s polyvecl) (schar [PackSByteLen]byte) {
  * Arguments:   - unsigned char *s_char: pointer to input array
  *              - polyvecl *s: pointer to output vector s
  **************************************************/
-func unpackPolyveclEta(schar [PackSByteLen]byte) (s polyvecl) {
+func unpackPolyveclEta(schar []byte) (s polyvecl) {
 	var i, j int
 	var tmp [8]int64
 	var S polyvecl
@@ -141,10 +141,10 @@ func unpackPolyveclEta(schar [PackSByteLen]byte) (s polyvecl) {
  * Arguments:   - polyvecl *z: pointer to input vector z
  *             - unsigned char *z_char: pointer to output array
  **************************************************/
-func packPolyveclGmte(z polyvecl) (zchar [PackZByteLen]byte) {
+func packPolyveclGmte(z polyvecl) (zchar []byte) {
 	var i, j int
 	var tmp [4]int64
-	var zch [PackZByteLen]byte
+	var zch := make([]byte, PackZByteLen)
 	for i = 0; i < L; i++ {
 		for j = 0; j < 64; j++ {
 			tmp[0] = z.vec[i].coeffs[4*j+0] + GammaMinusTwoEtaTheta
@@ -175,7 +175,7 @@ func packPolyveclGmte(z polyvecl) (zchar [PackZByteLen]byte) {
  * Arguments:   - unsigned char *z_char: pointer to input array
  *              - polyvecl *z: pointer to output vector z
  **************************************************/
-func unpackPolyveclGmte(zchar [PackZByteLen]byte) (z polyvecl) {
+func unpackPolyveclGmte(zchar []byte) (z polyvecl) {
 	var i, j int
 	var tmp [4]int64
 	var Z polyvecl
@@ -212,10 +212,10 @@ func unpackPolyveclGmte(zchar [PackZByteLen]byte) (z polyvecl) {
  * Arguments:  - polyvecm *m: pointer to input vector m
  *            - unsigned char *m_char: pointer to output array
  **************************************************/
-func packPolyvecmQ(m polyvecm) (mChar [PackIByteLen]byte) {
+func packPolyvecmQ(m polyvecm) (mChar []byte) {
 	var ii, j int
 	var tmp [2]int64
-	var mCh [PackIByteLen]byte
+	var mCh := make([]byte, PackIByteLen)
 	for ii = 0; ii < M; ii++ {
 		for j = 0; j < 128; j++ {
 			tmp[0] = m.vec[ii].coeffs[2*j] + Q2
@@ -242,7 +242,7 @@ func packPolyvecmQ(m polyvecm) (mChar [PackIByteLen]byte) {
  * Arguments:   - unsigned char *m_char: pointer to input array
  *              - polyvecm *m: pointer to output vector m
  **************************************************/
-func unpackPolyvecmQ(mChar [PackIByteLen]byte) (m polyvecm) {
+func unpackPolyvecmQ(mChar []byte) (m polyvecm) {
 	var ii, j int
 	var tmp [2]int64
 	var mm polyvecm
@@ -346,9 +346,9 @@ func unpackPolyvecmQ(mChar [PackIByteLen]byte) (m polyvecm) {
  *              - unsigned char *mpk: pointer to output array mpk
  **************************************************/
 
-func packMpk(masterpk MasterPubKey) (mpk [MpkByteLen]byte) {
+func packMpk(masterpk MasterPubKey) (mpk []byte) {
 	var i int
-	var mpkk [MpkByteLen]byte
+	var mpkk := make([]byte, MpkByteLen)
 	for i = 0; i < PKKEMByteLen; i++ {
 		mpkk[i] = masterpk.pkkem[i]
 	} //pk_kem string
@@ -369,7 +369,7 @@ func packMpk(masterpk MasterPubKey) (mpk [MpkByteLen]byte) {
  *             - unsigned char *pkkem: point to output pk in kem
  *             - polyveck *t: pointer to output vector t
  **************************************************/
-func unpackMpk(mpk [MpkByteLen]byte) (masterpk MasterPubKey) {
+func unpackMpk(mpk []byte) (masterpk MasterPubKey) {
 	var i int
 	masterpkk := MasterPubKey{}
 	for i = 0; i < PKKEMByteLen; i++ {
@@ -393,14 +393,14 @@ func unpackMpk(mpk [MpkByteLen]byte) (masterpk MasterPubKey) {
  *              - polyvecl *s: pointer to input vector s
  *              - unsigned char *msk: pointer to output array msk
  **************************************************/
-func packMsk(skkem [SKKEMByteLen]byte, s polyvecl) (msk [MskByteLen]byte) {
+func packMsk(skkem []byte, s polyvecl) (msk []byte) {
 	var i int
-	var mskk [MskByteLen]byte
+	var mskk := make([]byte, MskByteLen)
 	for i = 0; i < SKKEMByteLen; i++ { //sk_kem string
 		mskk[i] = skkem[i]
 	}
 	//msk += SIZE_SKKEM
-	var sliceMsk [PackSByteLen]byte
+	var sliceMsk := make([]byte, PackSByteLen)
 	sliceMsk = packPolyveclEta(s)
 	for i = 0; i < PackSByteLen; i++ {
 		mskk[SKKEMByteLen+i] = sliceMsk[i]
@@ -418,15 +418,15 @@ func packMsk(skkem [SKKEMByteLen]byte, s polyvecl) (msk [MskByteLen]byte) {
  *             - unsigned char *skkem: point to output sk in kem
  *             - polyvecl *s: pointer to output vector s
  **************************************************/
-func unpackMsk(msk [MskByteLen]byte) (skkem [SKKEMByteLen]byte, s polyvecl) {
+func unpackMsk(msk []byte) (skkem []byte, s polyvecl) {
 	var i int
-	var skkemm [SKKEMByteLen]byte
+	var skkemm := make([]byte, SKKEMByteLen)
 	var ss polyvecl
 	for i = 0; i < SKKEMByteLen; i++ {
 		skkemm[i] = msk[i]
 	}
 	//msk += SIZE_SKKEM
-	var sliceMsk [PackSByteLen]byte
+	var sliceMsk := make([]byte, PackSByteLen)
 	for i = 0; i < PackSByteLen; i++ {
 		sliceMsk[i] = msk[SKKEMByteLen+i]
 	}
@@ -443,14 +443,14 @@ func unpackMsk(msk [MskByteLen]byte) (skkem [SKKEMByteLen]byte, s polyvecl) {
  *              - polyveck *t: pointer to input vector t
  *              - unsigned char *dpk: pointer to output array dpk
  **************************************************/
-func packDpk(derivedpk DerivedPubKey) (dpk [DpkByteLen]byte) {
+func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
 	var i int
-	var dpkk [DpkByteLen]byte
+	var dpkk := make([]byte, DpkByteLen)
 	for i = 0; i < CipherByteLen; i++ { //cipher string
 		dpkk[i] = derivedpk.c[i]
 	}
 	//dpk += SIZE_CIPHER
-	var sliceDpk [PackTByteLen]byte
+	var sliceDpk := make([]byte, PackTByteLen)
 	sliceDpk = packPolyveckQ(derivedpk.t)
 	for i = 0; i < PackTByteLen; i++ {
 		dpkk[CipherByteLen+i] = sliceDpk[i]
@@ -467,14 +467,14 @@ func packDpk(derivedpk DerivedPubKey) (dpk [DpkByteLen]byte) {
  *             - unsigned char *c: point to output C in kem
  *              - polyveck *t: pointer to output vector t
  **************************************************/
-func unpackDpk(dpk [DpkByteLen]byte) (derivedpk DerivedPubKey) {
+func unpackDpk(dpk []byte) (derivedpk DerivedPubKey) {
 	var i int
 	derivedpkk := DerivedPubKey{}
 	for i = 0; i < CipherByteLen; i++ {
 		derivedpkk.c[i] = dpk[i]
 	}
 	//dpk += SIZE_CIPHER
-	var sliceDpk [PackTByteLen]byte
+	var sliceDpk := make([]byte, PackTByteLen)
 	for i = 0; i < PackTByteLen; i++ {
 		sliceDpk[i] = dpk[CipherByteLen+i]
 	}
@@ -500,7 +500,7 @@ func packSig(sig Signature) (signature []byte) {
 	/* Encode z*/
 	//printf("encode z\n")
 
-	var slicez [PackZByteLen]byte
+	var slicez := make([]byte, PackZByteLen)
 	for i2 = 0; i2 < sig.r; i2++ {
 		slicez = packPolyveclGmte(sig.z[i2])
 		for j = 0; j < PackZByteLen; j++ {
@@ -510,7 +510,7 @@ func packSig(sig Signature) (signature []byte) {
 
 	/* Encode I*/
 	//printf("encode I\n")
-	var sliceI [PackIByteLen]byte
+	var sliceI := make([]byte, PackIByteLen)
 	//var sliceI = sig[r * PackZByteLen:r * PackZByteLen + PackIByteLen]
 	sliceI = packPolyvecmQ(sig.I)
 	for i2 = 0; i2 < PackIByteLen; i2++ {
@@ -566,7 +566,7 @@ func unpackSig(signa []byte) (sig Signature, err error) {
 
 	/* Decode z*/
 	var zz = make([]polyvecl, sigg.r)
-	var slicez [PackZByteLen]byte
+	var slicez := make([]byte, PackZByteLen)
 	for ii = 0; ii < sigg.r; ii++ {
 		for j = 0; j < PackZByteLen; j++ {
 			slicez[j] = signa[ii*PackZByteLen+j]
@@ -576,7 +576,7 @@ func unpackSig(signa []byte) (sig Signature, err error) {
 	sigg.z = zz
 
 	/* Decode I */
-	var sliceI [PackIByteLen]byte
+	var sliceI := make([]byte, PackIByteLen)
 	for ii = 0; ii < PackIByteLen; ii++ {
 		sliceI[ii] = signa[ii+sigg.r*PackZByteLen]
 	}
