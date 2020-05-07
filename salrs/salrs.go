@@ -626,8 +626,8 @@ func (mpk *MasterPubKey) Serialize() []byte {
 	for i = 0; i < PackTByteLen; i++ {
 		b[PKKEMByteLen+i] = sliceMpk[i]
 	}
-	tmp := make([]byte, MpkByteLen)
-	for i = 0; i < MpkByteLen/2; i++ {
+	tmp := make([]byte, MpkByteLen * 2)
+	for i = 0; i < MpkByteLen; i++ {
 		tbyte = b[i] >> 4
 		if tbyte < 10 {
 			tmp[i*2] = tbyte + '0'
@@ -656,9 +656,9 @@ func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 	var i int
 	var tmp1, tmp2 byte
 	var erro error
-	b := make([]byte, MpkByteLen/2)
+	b := make([]byte, MpkByteLen)
 	btmp := make([]byte, pkem.CryptoPublicKeyBytes())
-	for i = 0; i < MpkByteLen/2; i++ {
+	for i = 0; i < MpkByteLen; i++ {
 		if mpkByteStr[i*2] >= '0' && mpkByteStr[i*2] <= '9' {
 			tmp1 = mpkByteStr[i*2] - '0'
 		} else {
@@ -698,8 +698,8 @@ func (dpk *DerivedPubKey) Serialize() []byte {
 	for i = 0; i < PackTByteLen; i++ {
 		b[CipherByteLen+i] = sliceDpk[i]
 	}
-	tmp := make([]byte, DpkByteLen)
-	for i = 0; i < DpkByteLen/2; i++ {
+	tmp := make([]byte, DpkByteLen*2)
+	for i = 0; i < DpkByteLen; i++ {
 		tbyte = b[i] >> 4
 		if tbyte < 10 {
 			tmp[i*2] = tbyte + '0'
@@ -723,8 +723,8 @@ func DeseralizeDerivedPubKey(dpkByteStr []byte) (dpk *DerivedPubKey, err error) 
 	derivedPubKey := &DerivedPubKey{}
 	var i int
 	var tmp1, tmp2 byte
-	b := make([]byte, DpkByteLen/2)
-	for i = 0; i < MpkByteLen/2; i++ {
+	b := make([]byte, DpkByteLen)
+	for i = 0; i < DpkByteLen; i++ {
 		if dpkByteStr[i*2] >= '0' && dpkByteStr[i*2] <= '9' {
 			tmp1 = dpkByteStr[i*2] - '0'
 		} else {
