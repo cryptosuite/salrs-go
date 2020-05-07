@@ -452,7 +452,6 @@ func unpackMsk(msk []byte) (skkem []byte, s polyvecl) {
  *              - polyveck *t: pointer to input vector t
  *              - unsigned char *dpk: pointer to output array dpk
  **************************************************/
-/**
 func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
 	var i int
 	var dpkk := make([]byte, DpkByteLen)
@@ -460,14 +459,13 @@ func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
 		dpkk[i] = derivedpk.c[i]
 	}
 	//dpk += SIZE_CIPHER
-	var sliceDpk := make([]byte, PackTByteLen)
+	sliceDpk := make([]byte, PackTByteLen)
 	sliceDpk = packPolyveckQ(derivedpk.t)
 	for i = 0; i < PackTByteLen; i++ {
 		dpkk[CipherByteLen+i] = sliceDpk[i]
 	}
 	return dpkk
 }
-**/
 
 /*************************************************
  * Name:        unpack_dpk
@@ -478,7 +476,6 @@ func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
  *             - unsigned char *c: point to output C in kem
  *              - polyveck *t: pointer to output vector t
  **************************************************/
-/**
 func unpackDpk(dpk []byte) (derivedpk DerivedPubKey) {
 	var i int
 	derivedpkk := DerivedPubKey{}
@@ -486,14 +483,13 @@ func unpackDpk(dpk []byte) (derivedpk DerivedPubKey) {
 		derivedpkk.c[i] = dpk[i]
 	}
 	//dpk += SIZE_CIPHER
-	var sliceDpk := make([]byte, PackTByteLen)
+	sliceDpk := make([]byte, PackTByteLen)
 	for i = 0; i < PackTByteLen; i++ {
 		sliceDpk[i] = dpk[CipherByteLen+i]
 	}
 	derivedpkk.t = unpackPolyveckQ(sliceDpk)
 	return derivedpkk
 }
-**/
 
 /*************************************************
  * Name:        pack_sig
