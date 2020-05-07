@@ -47,18 +47,14 @@ const (
 	PackSByteLen = 480
 	PackZByteLen = 3520
 	PackIByteLen = 1152
-
-	cstr     = "today_is_a_good_day_today_is_a_good_day_today_is_a_good_day"
-	CSTRSIZE = len(cstr)
-)
-
-var (
 	MpkByteLen    = kyber.Kyber768.CryptoPublicKeyBytes() + PackTByteLen
 	PKKEMByteLen  = kyber.Kyber768.CryptoPublicKeyBytes()
 	MskByteLen    = kyber.Kyber768.CryptoSecretKeyBytes() + PackSByteLen
 	SKKEMByteLen  = kyber.Kyber768.CryptoSecretKeyBytes()
 	DpkByteLen    = kyber.Kyber768.CryptoCiphertextBytes() + PackTByteLen
 	CipherByteLen = kyber.Kyber768.CryptoCiphertextBytes()
+	cstr     = "today_is_a_good_day_today_is_a_good_day_today_is_a_good_day"
+	CSTRSIZE = len(cstr)
 )
 
 //	public const def	end=1000
