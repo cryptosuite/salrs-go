@@ -178,7 +178,7 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 		fmt.Println(erro)
 	}
 
-	s = unpackPolyveclEta(stmp)
+	s = generateLEta()
 
 	A = expandMatA()
 	for i = 0; i < K; i++ {
