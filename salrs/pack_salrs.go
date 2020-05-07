@@ -336,6 +336,7 @@ func unpackPolyvecmQ(mChar []byte) (m polyvecm) {
   }
   **/
 
+
 /*************************************************
  * Name:        pack_mpk
  *
@@ -346,6 +347,7 @@ func unpackPolyvecmQ(mChar []byte) (m polyvecm) {
  *              - unsigned char *mpk: pointer to output array mpk
  **************************************************/
 
+/**
 func packMpk(masterpk MasterPubKey) (mpk []byte) {
 	var i int
 	var mpkk := make([]byte, MpkByteLen)
@@ -359,6 +361,7 @@ func packMpk(masterpk MasterPubKey) (mpk []byte) {
 	}
 	return mpkk
 }
+**/
 
 /*************************************************
  * Name:        unpack_mpk
@@ -369,6 +372,7 @@ func packMpk(masterpk MasterPubKey) (mpk []byte) {
  *             - unsigned char *pkkem: point to output pk in kem
  *             - polyveck *t: pointer to output vector t
  **************************************************/
+/**
 func unpackMpk(mpk []byte) (masterpk MasterPubKey) {
 	var i int
 	masterpkk := MasterPubKey{}
@@ -383,6 +387,7 @@ func unpackMpk(mpk []byte) (masterpk MasterPubKey) {
 	masterpkk.t = unpackPolyveckQ(sliceMpk)
 	return masterpkk
 }
+**/
 
 /*************************************************
  * Name:        pack_msk
@@ -393,6 +398,7 @@ func unpackMpk(mpk []byte) (masterpk MasterPubKey) {
  *              - polyvecl *s: pointer to input vector s
  *              - unsigned char *msk: pointer to output array msk
  **************************************************/
+/**
 func packMsk(skkem []byte, s polyvecl) (msk []byte) {
 	var i int
 	var mskk := make([]byte, MskByteLen)
@@ -408,6 +414,7 @@ func packMsk(skkem []byte, s polyvecl) (msk []byte) {
 
 	return mskk
 }
+**/
 
 /*************************************************
  * Name:        unpack_msk
@@ -418,6 +425,7 @@ func packMsk(skkem []byte, s polyvecl) (msk []byte) {
  *             - unsigned char *skkem: point to output sk in kem
  *             - polyvecl *s: pointer to output vector s
  **************************************************/
+/**
 func unpackMsk(msk []byte) (skkem []byte, s polyvecl) {
 	var i int
 	var skkemm := make([]byte, SKKEMByteLen)
@@ -433,6 +441,7 @@ func unpackMsk(msk []byte) (skkem []byte, s polyvecl) {
 	ss = unpackPolyveclEta(sliceMsk)
 	return skkemm, ss
 }
+**/
 
 /*************************************************
  * Name:        pack_dpk
@@ -443,6 +452,7 @@ func unpackMsk(msk []byte) (skkem []byte, s polyvecl) {
  *              - polyveck *t: pointer to input vector t
  *              - unsigned char *dpk: pointer to output array dpk
  **************************************************/
+/**
 func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
 	var i int
 	var dpkk := make([]byte, DpkByteLen)
@@ -457,6 +467,7 @@ func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
 	}
 	return dpkk
 }
+**/
 
 /*************************************************
  * Name:        unpack_dpk
@@ -467,6 +478,7 @@ func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
  *             - unsigned char *c: point to output C in kem
  *              - polyveck *t: pointer to output vector t
  **************************************************/
+/**
 func unpackDpk(dpk []byte) (derivedpk DerivedPubKey) {
 	var i int
 	derivedpkk := DerivedPubKey{}
@@ -481,6 +493,7 @@ func unpackDpk(dpk []byte) (derivedpk DerivedPubKey) {
 	derivedpkk.t = unpackPolyveckQ(sliceDpk)
 	return derivedpkk
 }
+**/
 
 /*************************************************
  * Name:        pack_sig
