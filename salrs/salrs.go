@@ -621,7 +621,7 @@ func (mpk *MasterPubKey) Serialize() []byte {
 	for i = 0; i < PKKEMByteLen; i++ {
 		b[i] = mpk.pkkem.Bytes()[i]
 	} //pk_kem string
-	var sliceMpk [PackTByteLen]byte
+	var sliceMpk := make([]byte, PackTByteLen)
 	sliceMpk = packPolyveckQ(mpk.t)
 	for i = 0; i < PackTByteLen; i++ {
 		b[PKKEMByteLen+i] = sliceMpk[i]
@@ -675,7 +675,7 @@ func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 		btmp[i] = b[i]
 	}
 	masterPubKey.pkkem, erro = pkem.PublicKeyFromBytes(btmp)
-	var sliceMpk [PackTByteLen]byte
+	var sliceMpk := make([]byte, PackTByteLen)
 	for i = 0; i < PackTByteLen; i++ {
 		sliceMpk[i] = b[PKKEMByteLen+i]
 	}
@@ -690,7 +690,7 @@ func (dpk *DerivedPubKey) Serialize() []byte {
 	for i = 0; i < CipherByteLen; i++ { //cipher string
 		b[i] = dpk.c[i]
 	}
-	var sliceDpk [PackTByteLen]byte
+	var sliceDpk := make([]byte, PackTByteLen)
 	sliceDpk = packPolyveckQ(dpk.t)
 	for i = 0; i < PackTByteLen; i++ {
 		b[CipherByteLen+i] = sliceDpk[i]
@@ -738,7 +738,7 @@ func DeseralizeDerivedPubKey(dpkByteStr []byte) (dpk *DerivedPubKey, err error) 
 		derivedPubKey.c[i] = b[i]
 	}
 	//dpk += SIZE_CIPHER
-	var sliceDpk [PackTByteLen]byte
+	var sliceDpk := make([]byte, PackTByteLen)
 	for i = 0; i < PackTByteLen; i++ {
 		sliceDpk[i] = b[CipherByteLen+i]
 	}
