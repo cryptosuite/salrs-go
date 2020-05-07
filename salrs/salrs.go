@@ -22,7 +22,7 @@ This file contains all the public constant, type, and functions that are availab
 //	public const def	begin
 const PassPhaseByteLen = 32
 
-//var pkem *kyber.ParameterSet = new(kyber.ParameterSet)
+var pkem *kyber.ParameterSet = new(kyber.ParameterSet)
 
 const (
 	N                     = 256
@@ -47,14 +47,17 @@ const (
 	PackSByteLen = 480
 	PackZByteLen = 3520
 	PackIByteLen = 1152
-	MpkByteLen    = kyber.Kyber768.CryptoPublicKeyBytes() + PackTByteLen
-	PKKEMByteLen  = kyber.Kyber768.CryptoPublicKeyBytes()
-	MskByteLen    = kyber.Kyber768.CryptoSecretKeyBytes() + PackSByteLen
-	SKKEMByteLen  = kyber.Kyber768.CryptoSecretKeyBytes()
-	DpkByteLen    = kyber.Kyber768.CryptoCiphertextBytes() + PackTByteLen
-	CipherByteLen = kyber.Kyber768.CryptoCiphertextBytes()
 	cstr     = "today_is_a_good_day_today_is_a_good_day_today_is_a_good_day"
 	CSTRSIZE = len(cstr)
+)
+
+var(
+	MpkByteLen    = pkkem.CryptoPublicKeyBytes() + PackTByteLen
+	PKKEMByteLen  = pkkem.CryptoPublicKeyBytes()
+	MskByteLen    = pkkem.CryptoSecretKeyBytes() + PackSByteLen
+	SKKEMByteLen  = pkkem.CryptoSecretKeyBytes()
+	DpkByteLen    = pkkem.CryptoCiphertextBytes() + PackTByteLen
+	CipherByteLen = pkkem.CryptoCiphertextBytes()
 )
 
 //	public const def	end=1000
@@ -105,7 +108,7 @@ type KeyImage struct {
 //	note that the sizes depend on the PP, we may need to put these constants together with PP.
 
 func Setup() {
-	//pkem = kyber.Kyber768
+	pkem = kyber.Kyber768
 }
 
 /*
