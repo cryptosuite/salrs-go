@@ -454,7 +454,7 @@ func unpackMsk(msk []byte) (skkem []byte, s polyvecl) {
  **************************************************/
 func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
 	var i int
-	var dpkk := make([]byte, DpkByteLen)
+	dpkk := make([]byte, DpkByteLen)
 	for i = 0; i < CipherByteLen; i++ { //cipher string
 		dpkk[i] = derivedpk.c[i]
 	}
