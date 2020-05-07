@@ -169,7 +169,7 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 		t    polyveck
 		s    polyvecl
 		tmp  poly
-		stmp [PackSByteLen]byte
+		//stmp = make([]byte, PackSByteLen)
 		erro error
 	)
 
