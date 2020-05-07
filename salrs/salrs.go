@@ -52,12 +52,12 @@ const (
 )
 
 var(
-	MpkByteLen    = pkkem.CryptoPublicKeyBytes() + PackTByteLen
-	PKKEMByteLen  = pkkem.CryptoPublicKeyBytes()
-	MskByteLen    = pkkem.CryptoSecretKeyBytes() + PackSByteLen
-	SKKEMByteLen  = pkkem.CryptoSecretKeyBytes()
-	DpkByteLen    = pkkem.CryptoCiphertextBytes() + PackTByteLen
-	CipherByteLen = pkkem.CryptoCiphertextBytes()
+	MpkByteLen    = pkem.CryptoPublicKeyBytes() + PackTByteLen
+	PKKEMByteLen  = pkem.CryptoPublicKeyBytes()
+	MskByteLen    = pkem.CryptoSecretKeyBytes() + PackSByteLen
+	SKKEMByteLen  = pkem.CryptoSecretKeyBytes()
+	DpkByteLen    = pkem.CryptoCiphertextBytes() + PackTByteLen
+	CipherByteLen = pkem.CryptoCiphertextBytes()
 )
 
 //	public const def	end=1000
