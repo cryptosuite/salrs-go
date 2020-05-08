@@ -22,7 +22,7 @@ This file contains all the public constant, type, and functions that are availab
 //	public const def	begin
 const PassPhaseByteLen = 32
 
-var pkem *kyber.ParameterSet = new(kyber.ParameterSet)
+var pkem = kyber.Kyber768
 
 const (
 	N                     = 256
@@ -64,9 +64,8 @@ var(
 
 //	public type def		begin
 type MasterPubKey struct {
-	pkkem *kyber.PublicKey
-	//pkkem [kyber.CryptoPublickeybytes]byte
 	t polyveck
+	pkkem *kyber.PublicKey
 }
 
 type MasterSecretViewKey struct {
@@ -300,10 +299,12 @@ func Sign(msg []byte, dpkRing *DpkRing, dpk *DerivedPubKey, mpk *MasterPubKey, m
 		flag2, flagDpk, ii            = -1, 0, 0
 		tmpDpk                        DerivedPubKey
 		bl                            = true
+		erro                          error
 	)
 
-	//ct := make([]byte, pkem.CryptoCiphertextBytes())
 	ss := make([]byte, pkem.CryptoSharedSecretBytes())
+	ct := make([]byte, pkem.CryptoCiphertextBytes())
+
 	r = dpkRing.R
 	zz := make([]polyvecl, r)
 	tmpDpk = dpkRing.Dpk[0]
@@ -321,14 +322,17 @@ func Sign(msg []byte, dpkRing *DpkRing, dpk *DerivedPubKey, mpk *MasterPubKey, m
 		if Equaldpk(*dpk, dpkRing.Dpk[i]) {
 			ii = i
 			flag2 = 0
-			//ct = dpk.c
+			ct = dpk.c
 			tUp = dpk.t
 		}
 	}
 	if flag2 == -1 {
 		return nil, errors.New("you have no access to do the sign as the dpk is not in the ring")
 	}
-
+	ss = msvk.skkem.CryptoKemDec(ct)
+	if erro != nil {
+		fmt.Println(err)
+	}
 	H = hm(tUp)
 	s = mssk.S
 	si = expandV(ss)
@@ -556,7 +560,6 @@ func Verify(msg []byte, dpkRing *DpkRing, sig *Signature) (keyImage *KeyImage, v
 			v.vec[i] = polyAddition(hz.vec[i], cI.vec[i])
 		}
 		c = hTheta(msg, len(msg), dpkRing, w, v, I)
-
 	}
 	//fmt.Println("passed 4")
 	for i = 0; i < N; i++ {
@@ -614,7 +617,7 @@ func Link(msg1 []byte, dpkRing1 *DpkRing, sig1 *Signature, msg2 []byte, dpkRing2
 	return EqualI(I1, I2)
 }
 
-func (mpk *MasterPubKey) Serialize() []byte {
+func (mpk *MasterPubKey)Serialize() ([]byte) {
 	b := make([]byte, MpkByteLen)
 	var i int
 	var tbyte byte
@@ -648,7 +651,7 @@ func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 	if len(mpkByteStr) == 0 {
 		return nil, errors.New("mpk byte string is empty")
 	}
-	if len(mpkByteStr) != MpkByteLen {
+	if len(mpkByteStr) != 2 * MpkByteLen {
 		return nil, errors.New("invalid mpk byte length")
 	}
 	masterPubKey := &MasterPubKey{}
@@ -723,6 +726,7 @@ func DeseralizeDerivedPubKey(dpkByteStr []byte) (dpk *DerivedPubKey, err error) 
 	derivedPubKey := &DerivedPubKey{}
 	var i int
 	var tmp1, tmp2 byte
+	ctmp := make([]byte, CipherByteLen)
 	b := make([]byte, DpkByteLen)
 	for i = 0; i < DpkByteLen; i++ {
 		if dpkByteStr[i*2] >= '0' && dpkByteStr[i*2] <= '9' {
@@ -738,8 +742,9 @@ func DeseralizeDerivedPubKey(dpkByteStr []byte) (dpk *DerivedPubKey, err error) 
 		b[i] = tmp1<<4 | tmp2
 	}
 	for i = 0; i < CipherByteLen; i++ {
-		derivedPubKey.c[i] = b[i]
+		ctmp[i] = b[i]
 	}
+	derivedPubKey.c = ctmp
 	//dpk += SIZE_CIPHER
 	sliceDpk := make([]byte, PackTByteLen)
 	for i = 0; i < PackTByteLen; i++ {
