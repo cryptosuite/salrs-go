@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/cryptosuite/salrs-go/salrs"
+	//"github.com/cryptosuite/salrs-go/salrs"
+	"github.com/kbb-98/salrs-go-1/salrs"
 	"time"
 )
 
 const (
-	r     = 10   //dpk ring scale
-	round = 10.0 //round of test
+	r     = 3  //dpk ring scale
+	round = 3.0 //round of test
 )
 
 func main() {
@@ -25,12 +26,12 @@ func main() {
 	sig2 := &salrs.Signature{}
 	keyimage1 := &salrs.KeyImage{}
 	keyimage2 := &salrs.KeyImage{}
-	mseed := make([]byte, salrs.MasterSeedByteLen)
 	msg1 := []byte{'t', 'o', 'd', 'a', 'y'}
 	msg2 := []byte{'t', 'o', 'd', 'a', 'x', 'y'}
-	mpkbytestr := make([]byte, salrs.MpkByteLen)
-	dpkbytestr := make([]byte, salrs.DpkByteLen)
+	mpkbytestr := make([]byte, salrs.MpkByteLen * 2)
+	dpkbytestr := make([]byte, salrs.DpkByteLen * 2)
 	dpkring.R = r
+	mseed := []byte{'a', 'b', 'c'}
 
 	//setup
 	start := float64(time.Now().UnixNano())
@@ -44,31 +45,33 @@ func main() {
 	//choose generating master seed from passphase or generating seed of master key to generate a seed for master key
 	//both codes are tested and provided below
 
-	//generate master seed from passphase
-	start = float64(time.Now().UnixNano())
-	for i = 0; i < round; i++ {
-		mseed, err = salrs.GenerateMasterSeedFromPassPhase(msg1)
-	}
-	end = float64(time.Now().UnixNano())
-	fmt.Printf("Generate Master Seed From PassPhase time consumed:%vs\n", (end-start)/1000000000/round)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Printf("Generate Master Seed From PassPhase passed\n\n")
-	}
+	/*
+		//generate master seed from passphase
+		start = float64(time.Now().UnixNano())
+		for i = 0; i < round; i++ {
+			mseed, err = salrs.GenerateMasterSeedFromPassPhase(msg1)
+		}
+		end = float64(time.Now().UnixNano())
+		fmt.Printf("Generate Master Seed From PassPhase time consumed:%vs\n", (end-start)/1000000000/round)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Printf("Generate Master Seed From PassPhase passed\n\n")
+		}
 
-	//generate seed of master key
-	start = float64(time.Now().UnixNano())
-	for i = 0; i < round; i++ {
-		mseed, err = salrs.GenerateMasterSeed()
-	}
-	end = float64(time.Now().UnixNano())
-	fmt.Printf("Generate Master Seed time consumed:%vs\n", (end-start)/1000000000/round)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Printf("Generate Master Seed passed\n\n")
-	}
+		//generate seed of master key
+		start = float64(time.Now().UnixNano())
+		for i = 0; i < round; i++ {
+			mseed, err = salrs.GenerateMasterSeed()
+		}
+		end = float64(time.Now().UnixNano())
+		fmt.Printf("Generate Master Seed time consumed:%vs\n", (end-start)/1000000000/round)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Printf("Generate Master Seed passed\n\n")
+		}
+	*/
 
 	//genereta master key
 	start = float64(time.Now().UnixNano())
@@ -97,6 +100,7 @@ func main() {
 		fmt.Printf("Serialize and Deseralize of master public key passed\n\n")
 	}
 
+
 	//generate derived public key
 	start = float64(time.Now().UnixNano())
 	for i = 0; i < round; i++ {
@@ -122,7 +126,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Printf("Serialize and Deseralize of master public key passed\n\n")
+		fmt.Printf("Serialize and Deseralize of derived public key passed\n\n")
 	}
 
 	//generate a dpkring for test

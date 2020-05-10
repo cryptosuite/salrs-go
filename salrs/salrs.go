@@ -1,27 +1,28 @@
 package salrs
 
-//#cgo CFLAGS: -I./kyber_all
-//#cgo LDFLAGS: -L${SRCDIR}/kyber_all -lkyber_all
+/*
+//#cgo CFLAGS: -I./kyber_all_win
+//#cgo LDFLAGS: -L${SRCDIR}/kyber_all_win -lkyber_all
 //
 //#include "kyber_all.h"
 import "C"
+*/
+
 import (
 	"errors"
-	"golang.org/x/crypto/sha3"
-	"unsafe"
+	"fmt"
+	//"github.com/cryptosuite/kyber-go/kyber"
+	"github.com/lynzz1701/kyber-go/kyber"
 )
 
 /*
 This file contains all the public constant, type, and functions that are available to oue of the package.
 */
 
-//	public const def	begi
-//  to do
+//	public const def	begin
 const PassPhaseByteLen = 32
 
-//const MasterSeedByteLen = 32
-//const MpkByteLen = 1000
-//const DpkByteLen = 2000
+var pkem = kyber.Kyber768
 
 const (
 	N                     = 256
@@ -46,47 +47,30 @@ const (
 	PackSByteLen = 480
 	PackZByteLen = 3520
 	PackIByteLen = 1152
-
-	MpkByteLen    = 4544
-	PKKEMByteLen  = 1088
-	MskByteLen    = 2880
-	SKKEMByteLen  = 2400
-	DpkByteLen    = 4608
-	CipherByteLen = 1152
-	//MsskByteLen       = 480
-	//MsvkByteLen       = KyberK * KyberPolyBytes
-	MasterSeedByteLen = PackSByteLen + KyberSymBytes + KyberSymBytes
-
 	cstr     = "today_is_a_good_day_today_is_a_good_day_today_is_a_good_day"
 	CSTRSIZE = len(cstr)
+)
 
-	KyberK = 3 /* Change this for different security strengths */
-
-	/* Don't change parameters below this line */
-	KyberSymBytes = 32 /* size in bytes of shared key, hashes, and seeds */
-	//KyberPolyBytes              = 416
-	KyberPolyCompressedBytes = 96
-	//KyberPolyvecBytes           = KyberK * KyberPolyBytes
-	KyberPolyvecCompressedBytes = KyberK * 352
-	//KyberIndcpaMsgBytes         = KyberSymBytes
-	//KyberIndcpaPublickeyBytes   = KyberPolyvecCompressedBytes + KyberSymBytes
-	//KyberIndcpaSecretkeyBytes   = KyberPolyvecBytes
-	KyberIndcpaBytes = KyberPolyvecCompressedBytes + KyberPolyCompressedBytes
-	//KyberPublickeyBytes         = KyberIndcpaPublickeyBytes
-	//KyberSecretkeyBytes         = KyberIndcpaSecretkeyBytes + KyberIndcpaPublickeyBytes + 2*KyberSymBytes /* 32 bytes of additional space to save H(pk) */
-	KyberCiphertextBytes = KyberIndcpaBytes
+var(
+	MpkByteLen    = pkem.CryptoPublicKeyBytes() + PackTByteLen
+	PKKEMByteLen  = pkem.CryptoPublicKeyBytes()
+	MskByteLen    = pkem.CryptoSecretKeyBytes() + PackSByteLen
+	SKKEMByteLen  = pkem.CryptoSecretKeyBytes()
+	DpkByteLen    = pkem.CryptoCiphertextBytes() + PackTByteLen
+	CipherByteLen = pkem.CryptoCiphertextBytes()
 )
 
 //	public const def	end=1000
 
 //	public type def		begin
 type MasterPubKey struct {
-	pkkem [PKKEMByteLen]byte
-	t     polyveck
+	t polyveck
+	pkkem *kyber.PublicKey
 }
 
 type MasterSecretViewKey struct {
-	skkem [SKKEMByteLen]byte
+	skkem *kyber.SecretKey
+	//skkem [kyber.CryptoSecretkeybytes]byte
 }
 
 type MasterSecretSignKey struct {
@@ -94,7 +78,7 @@ type MasterSecretSignKey struct {
 }
 
 type DerivedPubKey struct {
-	c [CipherByteLen]byte
+	c []byte
 	t polyveck
 }
 
@@ -123,9 +107,10 @@ type KeyImage struct {
 //	note that the sizes depend on the PP, we may need to put these constants together with PP.
 
 func Setup() {
-	//	to do
+	pkem = kyber.Kyber768
 }
 
+/*
 func GenerateMasterSeed() (masterSeed []byte, err error) {
 	var s polyvecl
 	var i int
@@ -140,11 +125,13 @@ func GenerateMasterSeed() (masterSeed []byte, err error) {
 	s = generateLEta()
 	buf = packPolyveclEta(s)
 	for i = 0; i < PackSByteLen; i++ {
-		mseed[KyberSymBytes*2+i] = buf[i]
+		mseed[kyber.CryptoBytes*2+i] = buf[i]
 	}
 	return mseed, nil
 }
+*/
 
+/*
 func GenerateMasterSeedFromPassPhase(passPhase []byte) (masterSeed []byte, err error) {
 	if len(passPhase) == PassPhaseByteLen {
 		return nil, errors.New("passphase format is incorrect")
@@ -161,12 +148,12 @@ func GenerateMasterSeedFromPassPhase(passPhase []byte) (masterSeed []byte, err e
 	s = generateLEtaforPassPhase(mseed)
 	buf = packPolyveclEta(s)
 	for i = 0; i < PackSByteLen; i++ {
-		mseed[KyberSymBytes*2+i] = buf[i]
+		mseed[kyber.CryptoBytes*2+i] = buf[i]
 	}
 	return mseed, nil
 }
+*/
 
-//to do (rely on kyber)
 func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecretViewKey, mssk *MasterSecretSignKey, err error) {
 	if len(masterSeed) == 0 {
 		return nil, nil, nil, errors.New("master seed is empty")
@@ -174,65 +161,23 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 	masterPubKey := &MasterPubKey{}
 	masterSecretViewKey := &MasterSecretViewKey{}
 	masterSecretSignKey := &MasterSecretSignKey{}
-	//to do
+
 	var (
-		i, j          int
-		A             [K]polyvecl
-		t             polyveck
-		s             polyvecl
-		tmp           poly
-		a             [C.KYBER_K]C.polyvec_kyber
-		e, pkpv, skpv C.polyvec_kyber
-		pk            [PKKEMByteLen]byte
-		nonce         = '0'
-		stmp          [PackSByteLen]byte
+		i, j int
+		A    [K]polyvecl
+		t    polyveck
+		s    polyvecl
+		tmp  poly
+		//stmp = make([]byte, PackSByteLen)
+		erro error
 	)
 
-	publicseed := masterSeed[0:KyberSymBytes]
-	noiseseed := masterSeed[KyberSymBytes : KyberSymBytes+KyberSymBytes]
-	pseedChar := (*C.uchar)(unsafe.Pointer(&publicseed[0]))
-	nseedChar := (*C.uchar)(unsafe.Pointer(&noiseseed[0]))
-	noncechar := C.uchar(nonce)
-	i = 0
-	non := C.int(i)
-	C.gen_matrix_kyber(&a[0], pseedChar, non)
-
-	for i = 0; i < C.KYBER_K; i++ {
-		C.poly_getnoise_kyber(&skpv.vec[i], nseedChar, noncechar)
-		noncechar++
+	masterPubKey.pkkem, masterSecretViewKey.skkem, err = pkem.CryptoKemKeyPair(masterSeed)
+	if erro != nil {
+		fmt.Println(erro)
 	}
 
-	C.polyvec_ntt_kyber(&skpv)
-
-	for i = 0; i < C.KYBER_K; i++ {
-		C.poly_getnoise_kyber(&e.vec[i], nseedChar, noncechar)
-		noncechar++
-	}
-
-	// matrix-vector multiplication
-	for i = 0; i < C.KYBER_K; i++ {
-		C.polyvec_pointwise_acc_kyber(&pkpv.vec[i], &skpv, &a[i])
-	}
-
-	C.polyvec_invntt_kyber(&pkpv)
-	C.polyvec_add_kyber(&pkpv, &pkpv, &e)
-
-	skkemChar := (*C.uchar)(unsafe.Pointer(&masterSecretViewKey.skkem[0]))
-	C.pack_sk_kyber(skkemChar, &skpv)
-	pkChar := (*C.uchar)(unsafe.Pointer(&pk[0]))
-	C.pack_pk_kyber(pkChar, &pkpv, pseedChar)
-	for i = 0; i < C.KYBER_INDCPA_PUBLICKEYBYTES; i++ {
-		masterSecretViewKey.skkem[i+C.KYBER_INDCPA_SECRETKEYBYTES] = pk[i]
-	}
-	msvkSercetTwoSymChar := (*C.uchar)(unsafe.Pointer(&masterSecretViewKey.skkem[C.KYBER_SECRETKEYBYTES-2*C.KYBER_SYMBYTES]))
-	C.sha3_256_kyber(msvkSercetTwoSymChar, pkChar, C.KYBER_PUBLICKEYBYTES)
-	msvkSercetSymChar := (*C.uchar)(unsafe.Pointer(&masterSecretViewKey.skkem[C.KYBER_SECRETKEYBYTES-C.KYBER_SYMBYTES]))
-	C.randombytes_kyber(msvkSercetSymChar, C.KYBER_SYMBYTES)
-
-	for i = 0; i < PackSByteLen; i++ {
-		stmp[i] = masterSeed[2*KyberSymBytes+i]
-	}
-	s = unpackPolyveclEta(stmp)
+	s = generateLEta()
 
 	A = expandMatA()
 	for i = 0; i < K; i++ {
@@ -243,7 +188,6 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 		}
 	}
 	masterPubKey.t = t
-	masterPubKey.pkkem = pk
 	masterSecretSignKey.S = s
 
 	return masterPubKey, masterSecretViewKey, masterSecretSignKey, nil
@@ -257,23 +201,19 @@ func GenerateDerivedPubKey(mpk *MasterPubKey) (dpk *DerivedPubKey, err error) {
 
 	var (
 		i, j       int
-		pk         [PKKEMByteLen]byte
 		t, t2, tUp polyveck
 		A          [K]polyvecl
-		ct         [KyberCiphertextBytes]byte
 		s2         polyvecl
 		tmp        poly
+		erro       error
 	)
 
-	//to do
-	//non := C.int(i)
-	pk = mpk.pkkem
-	ss := make([]byte, 32)
-	ctChar := (*C.uchar)(unsafe.Pointer(&ct[0]))
-	ssChar := (*C.uchar)(unsafe.Pointer(&ss[0]))
-	pkChar := (*C.uchar)(unsafe.Pointer(&pk[0]))
-	//non = 0
-	C.crypto_kem_enc_kyber(ctChar, ssChar, pkChar)
+	ss := make([]byte, pkem.CryptoSharedSecretBytes())
+	ct := make([]byte, pkem.CryptoCiphertextBytes())
+	ct, ss, err = mpk.pkkem.CryptoKemEnc()
+	if erro != nil {
+		fmt.Println(err)
+	}
 
 	t = mpk.t
 	s2 = expandV(ss)
@@ -298,12 +238,13 @@ func GenerateDerivedPubKey(mpk *MasterPubKey) (dpk *DerivedPubKey, err error) {
 func CheckDerivedPubKeyOwner(dpk *DerivedPubKey, mpk *MasterPubKey, msvk *MasterSecretViewKey) bool {
 	var (
 		i, j       int
-		ct         [KyberCiphertextBytes]byte
 		tUp, t, t2 polyveck
 		s2         polyvecl
 		A          [K]polyvecl
 		tmp        poly
 	)
+	ct := make([]byte, pkem.CryptoCiphertextBytes())
+	ss := make([]byte, pkem.CryptoSharedSecretBytes())
 
 	ct = dpk.c
 	tUp = dpk.t
@@ -318,14 +259,7 @@ func CheckDerivedPubKeyOwner(dpk *DerivedPubKey, mpk *MasterPubKey, msvk *Master
 	}
 	//fmt.Println("passed 1")
 
-	ss := make([]byte, 32)
-	ctChar := (*C.uchar)(unsafe.Pointer(&ct[0]))
-	ssChar := (*C.uchar)(unsafe.Pointer(&ss[0]))
-	msvkChar := (*C.uchar)(unsafe.Pointer(&msvk.skkem[0]))
-	//non := C.int(i)
-	//non = 0
-	C.crypto_kem_dec_kyber(ssChar, ctChar, msvkChar)
-
+	ss = msvk.skkem.CryptoKemDec(ct)
 	s2 = expandV(ss)
 	A = expandMatA()
 	for i = 0; i < N; i++ {
@@ -356,7 +290,6 @@ func Sign(msg []byte, dpkRing *DpkRing, dpk *DerivedPubKey, mpk *MasterPubKey, m
 	sigma := &Signature{}
 	var (
 		i, iMain, j, rejection, r, i2 int
-		ct                            [KyberCiphertextBytes]byte
 		A                             [K]polyvecl
 		H                             [M]polyvecl
 		s, si, sUp, z, y, cs          polyvecl
@@ -366,13 +299,17 @@ func Sign(msg []byte, dpkRing *DpkRing, dpk *DerivedPubKey, mpk *MasterPubKey, m
 		flag2, flagDpk, ii            = -1, 0, 0
 		tmpDpk                        DerivedPubKey
 		bl                            = true
+		erro                          error
 	)
+
+	ss := make([]byte, pkem.CryptoSharedSecretBytes())
+	ct := make([]byte, pkem.CryptoCiphertextBytes())
 
 	r = dpkRing.R
 	zz := make([]polyvecl, r)
 	tmpDpk = dpkRing.Dpk[0]
 	for i = 1; i < dpkRing.R; i++ {
-		if tmpDpk == dpkRing.Dpk[i] {
+		if Equaldpk(tmpDpk, dpkRing.Dpk[i]) {
 			flagDpk = 1
 			break
 		}
@@ -382,7 +319,7 @@ func Sign(msg []byte, dpkRing *DpkRing, dpk *DerivedPubKey, mpk *MasterPubKey, m
 	}
 
 	for i = 0; i < dpkRing.R; i++ {
-		if dpk == &dpkRing.Dpk[i] {
+		if Equaldpk(*dpk, dpkRing.Dpk[i]) {
 			ii = i
 			flag2 = 0
 			ct = dpk.c
@@ -392,15 +329,12 @@ func Sign(msg []byte, dpkRing *DpkRing, dpk *DerivedPubKey, mpk *MasterPubKey, m
 	if flag2 == -1 {
 		return nil, errors.New("you have no access to do the sign as the dpk is not in the ring")
 	}
-
+	ss = msvk.skkem.CryptoKemDec(ct)
+	if erro != nil {
+		fmt.Println(err)
+	}
 	H = hm(tUp)
 	s = mssk.S
-	ss := make([]byte, 32)
-	ctChar := (*C.uchar)(unsafe.Pointer(&ct[0]))
-	ssChar := (*C.uchar)(unsafe.Pointer(&ss[0]))
-	msvkChar := (*C.uchar)(unsafe.Pointer(&msvk.skkem[0]))
-	C.crypto_kem_dec_kyber(ssChar, ctChar, msvkChar)
-
 	si = expandV(ss)
 
 	bl = CheckDerivedPubKeyOwner(dpk, mpk, msvk)
@@ -517,7 +451,7 @@ func Sign(msg []byte, dpkRing *DpkRing, dpk *DerivedPubKey, mpk *MasterPubKey, m
 			z.vec[i] = polyAddition(y.vec[i], cs.vec[i])
 		}
 		zz[ii] = z
-		ct = dpk.c
+		//ct = dpk.c
 		tUp = dpk.t
 		H = hm(tUp)
 		for i = 0; i < L; i++ {
@@ -557,7 +491,7 @@ func Verify(msg []byte, dpkRing *DpkRing, sig *Signature) (keyImage *KeyImage, v
 	flagDpk = 0
 	tmpDpk = dpkRing.Dpk[0]
 	for i = 1; i < r; i++ {
-		if tmpDpk == dpkRing.Dpk[i] {
+		if Equaldpk(tmpDpk, dpkRing.Dpk[i]) {
 			flagDpk = 1
 			break
 		}
@@ -626,7 +560,6 @@ func Verify(msg []byte, dpkRing *DpkRing, sig *Signature) (keyImage *KeyImage, v
 			v.vec[i] = polyAddition(hz.vec[i], cI.vec[i])
 		}
 		c = hTheta(msg, len(msg), dpkRing, w, v, I)
-
 	}
 	//fmt.Println("passed 4")
 	for i = 0; i < N; i++ {
@@ -653,7 +586,7 @@ func Link(msg1 []byte, dpkRing1 *DpkRing, sig1 *Signature, msg2 []byte, dpkRing2
 	keyImage2.I = sig2.I
 
 	for i = 1; i < dpkRing1.R; i++ {
-		if tmpDpk == dpkRing1.Dpk[i] {
+		if Equaldpk(tmpDpk, dpkRing1.Dpk[i]) {
 			flagDpk = 1
 			break
 		}
@@ -664,7 +597,7 @@ func Link(msg1 []byte, dpkRing1 *DpkRing, sig1 *Signature, msg2 []byte, dpkRing2
 
 	tmpDpk = dpkRing2.Dpk[0]
 	for i = 1; i < dpkRing2.R; i++ {
-		if tmpDpk == dpkRing2.Dpk[i] {
+		if Equaldpk(tmpDpk, dpkRing2.Dpk[i]) {
 			flagDpk = 1
 			break
 		}
@@ -684,36 +617,73 @@ func Link(msg1 []byte, dpkRing1 *DpkRing, sig1 *Signature, msg2 []byte, dpkRing2
 	return EqualI(I1, I2)
 }
 
-func (mpk *MasterPubKey) Serialize() []byte {
+func (mpk *MasterPubKey)Serialize() ([]byte) {
 	b := make([]byte, MpkByteLen)
 	var i int
+	var tbyte byte
 	for i = 0; i < PKKEMByteLen; i++ {
-		b[i] = mpk.pkkem[i]
+		b[i] = mpk.pkkem.Bytes()[i]
 	} //pk_kem string
-	var sliceMpk [PackTByteLen]byte
+	sliceMpk := make([]byte, PackTByteLen)
 	sliceMpk = packPolyveckQ(mpk.t)
 	for i = 0; i < PackTByteLen; i++ {
 		b[PKKEMByteLen+i] = sliceMpk[i]
 	}
-	return b
+	tmp := make([]byte, MpkByteLen * 2)
+	for i = 0; i < MpkByteLen; i++ {
+		tbyte = b[i] >> 4
+		if tbyte < 10 {
+			tmp[i*2] = tbyte + '0'
+		} else {
+			tmp[i*2] = tbyte - 10 + 'A'
+		}
+		tbyte = (b[i] << 4) >> 4
+		if tbyte < 10 {
+			tmp[i*2+1] = tbyte + '0'
+		} else {
+			tmp[i*2+1] = tbyte - 10 + 'A'
+		}
+	}
+	return tmp
 }
 
 func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 	if len(mpkByteStr) == 0 {
 		return nil, errors.New("mpk byte string is empty")
 	}
-	if len(mpkByteStr) != MpkByteLen {
+	if len(mpkByteStr) != 2 * MpkByteLen {
 		return nil, errors.New("invalid mpk byte length")
 	}
 	masterPubKey := &MasterPubKey{}
 	//	to do
 	var i int
-	for i = 0; i < PKKEMByteLen; i++ {
-		masterPubKey.pkkem[i] = mpkByteStr[i]
+	var tmp1, tmp2 byte
+	var erro error
+	b := make([]byte, MpkByteLen)
+	btmp := make([]byte, pkem.CryptoPublicKeyBytes())
+	for i = 0; i < MpkByteLen; i++ {
+		if mpkByteStr[i*2] >= '0' && mpkByteStr[i*2] <= '9' {
+			tmp1 = mpkByteStr[i*2] - '0'
+		} else {
+			tmp1 = mpkByteStr[i*2] + 10 - 'A'
+		}
+		if mpkByteStr[i*2+1] >= '0' && mpkByteStr[i*2+1] <= '9' {
+			tmp2 = mpkByteStr[i*2+1] - '0'
+		} else {
+			tmp2 = mpkByteStr[i*2+1] + 10 - 'A'
+		}
+		b[i] = tmp1<<4 | tmp2
 	}
-	var sliceMpk [PackTByteLen]byte
+	for i = 0; i < PKKEMByteLen; i++ {
+		btmp[i] = b[i]
+	}
+	masterPubKey.pkkem, erro = pkem.PublicKeyFromBytes(btmp)
+	if erro != nil{
+		return nil, errors.New("pubkey from byte failed")
+	}
+	sliceMpk := make([]byte, PackTByteLen)
 	for i = 0; i < PackTByteLen; i++ {
-		sliceMpk[i] = mpkByteStr[PKKEMByteLen+i]
+		sliceMpk[i] = b[PKKEMByteLen+i]
 	}
 	masterPubKey.t = unpackPolyveckQ(sliceMpk)
 	return masterPubKey, nil
@@ -722,15 +692,31 @@ func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 func (dpk *DerivedPubKey) Serialize() []byte {
 	b := make([]byte, DpkByteLen)
 	var i int
+	var tbyte byte
 	for i = 0; i < CipherByteLen; i++ { //cipher string
 		b[i] = dpk.c[i]
 	}
-	var sliceDpk [PackTByteLen]byte
+	sliceDpk := make([]byte, PackTByteLen)
 	sliceDpk = packPolyveckQ(dpk.t)
 	for i = 0; i < PackTByteLen; i++ {
 		b[CipherByteLen+i] = sliceDpk[i]
 	}
-	return b
+	tmp := make([]byte, DpkByteLen*2)
+	for i = 0; i < DpkByteLen; i++ {
+		tbyte = b[i] >> 4
+		if tbyte < 10 {
+			tmp[i*2] = tbyte + '0'
+		} else {
+			tmp[i*2] = tbyte - 10 + 'A'
+		}
+		tbyte = (b[i] << 4) >> 4
+		if tbyte < 10 {
+			tmp[i*2+1] = tbyte + '0'
+		} else {
+			tmp[i*2+1] = tbyte - 10 + 'A'
+		}
+	}
+	return tmp
 }
 
 func DeseralizeDerivedPubKey(dpkByteStr []byte) (dpk *DerivedPubKey, err error) {
@@ -739,13 +725,30 @@ func DeseralizeDerivedPubKey(dpkByteStr []byte) (dpk *DerivedPubKey, err error) 
 	}
 	derivedPubKey := &DerivedPubKey{}
 	var i int
-	for i = 0; i < CipherByteLen; i++ {
-		derivedPubKey.c[i] = dpkByteStr[i]
+	var tmp1, tmp2 byte
+	ctmp := make([]byte, CipherByteLen)
+	b := make([]byte, DpkByteLen)
+	for i = 0; i < DpkByteLen; i++ {
+		if dpkByteStr[i*2] >= '0' && dpkByteStr[i*2] <= '9' {
+			tmp1 = dpkByteStr[i*2] - '0'
+		} else {
+			tmp1 = dpkByteStr[i*2] + 10 - 'A'
+		}
+		if dpkByteStr[i*2+1] >= '0' && dpkByteStr[i*2+1] <= '9' {
+			tmp2 = dpkByteStr[i*2+1] - '0'
+		} else {
+			tmp2 = dpkByteStr[i*2+1] + 10 - 'A'
+		}
+		b[i] = tmp1<<4 | tmp2
 	}
+	for i = 0; i < CipherByteLen; i++ {
+		ctmp[i] = b[i]
+	}
+	derivedPubKey.c = ctmp
 	//dpk += SIZE_CIPHER
-	var sliceDpk [PackTByteLen]byte
+	sliceDpk := make([]byte, PackTByteLen)
 	for i = 0; i < PackTByteLen; i++ {
-		sliceDpk[i] = dpkByteStr[CipherByteLen+i]
+		sliceDpk[i] = b[CipherByteLen+i]
 	}
 	derivedPubKey.t = unpackPolyveckQ(sliceDpk)
 	return derivedPubKey, nil

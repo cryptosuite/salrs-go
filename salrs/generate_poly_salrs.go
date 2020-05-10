@@ -460,7 +460,7 @@ func generateLGammaSubToThetaEta() (s polyvecl) {
 func hm(t polyveck) (H [M]polyvecl) {
 	var i, j uint32
 	var h [M]polyvecl
-	var seedpack [PackTByteLen]byte
+	seedpack := make([]byte, PackTByteLen)
 	seedpack = packPolyveckQ(t)
 	seedbuf := seedpack[0:len(seedpack)]
 	c := sha3.NewShake256()
@@ -500,9 +500,9 @@ func hTheta(m []byte, mlen int, dpkring *DpkRing, w polyveck, v polyvecm, I poly
 		outbuf          = make([]byte, N)
 		tmpbuf1         = make([]byte, mlen)
 		tmpbuf2         = make([]byte, N)
-		tmpbuf3         [PackTByteLen]byte
-		tmpbuf4         [PackIByteLen]byte
-		dpkbyte         [DpkByteLen]byte
+		tmpbuf3         = make([]byte, PackTByteLen)
+		tmpbuf4         = make([]byte, PackIByteLen)
+		dpkbyte         = make([]byte, DpkByteLen)
 		count           = 0
 		C               poly
 	)
