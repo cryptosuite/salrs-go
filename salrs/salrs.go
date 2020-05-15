@@ -154,9 +154,11 @@ func GenerateMasterSeedFromPassPhase(passPhase []byte) (masterSeed []byte, err e
 }
 */
 
-func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecretViewKey, mssk *MasterSecretSignKey, err error) {
+func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecretViewKey, mssk *MasterSecretSignKey, mseed []byte, err error) {
 	if len(masterSeed) == 0 {
-		return nil, nil, nil, errors.New("master seed is empty")
+		md := make([]byte, 32)
+		md = randombytes(32)
+		masterSeed = md
 	}
 	masterPubKey := &MasterPubKey{}
 	masterSecretViewKey := &MasterSecretViewKey{}
@@ -190,7 +192,7 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 	masterPubKey.t = t
 	masterSecretSignKey.S = s
 
-	return masterPubKey, masterSecretViewKey, masterSecretSignKey, nil
+	return masterPubKey, masterSecretViewKey, masterSecretSignKey, masterSeed, nil
 }
 
 func GenerateDerivedPubKey(mpk *MasterPubKey) (dpk *DerivedPubKey, err error) {
@@ -687,6 +689,55 @@ func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 	}
 	masterPubKey.t = unpackPolyveckQ(sliceMpk)
 	return masterPubKey, nil
+}
+
+func SerializeMseed(mseed []byte) []byte {
+	var i, length int
+	var tbyte byte
+	length = len(mseed)
+	b := make([]byte, length * 2)
+	for i = 0; i < length; i++ {
+		tbyte = mseed[i] >> 4
+		if tbyte < 10 {
+			b[i*2] = tbyte + '0'
+		} else {
+			b[i*2] = tbyte - 10 + 'A'
+		}
+		tbyte = (mseed[i] << 4) >> 4
+		if tbyte < 10 {
+			b[i*2+1] = tbyte + '0'
+		} else {
+			b[i*2+1] = tbyte - 10 + 'A'
+		}
+	}
+	return b
+}
+
+func DeseralizeMseed(mseed []byte) (mpk []byte, err error) {
+	if len(mseed) == 0 {
+		return nil, errors.New("mastermseed is empty")
+	}
+	if len(mseed) % 2 != 0{
+		return nil, errors.New("invalid mastermseed")
+	}
+	var i, length int
+	var tmp1, tmp2 byte
+	length = len(mseed)
+	b := make([]byte, length/2)
+	for i = 0; i < length/2; i++ {
+		if mseed[i*2] >= '0' && mseed[i*2] <= '9' {
+			tmp1 = mseed[i*2] - '0'
+		} else {
+			tmp1 = mseed[i*2] + 10 - 'A'
+		}
+		if mseed[i*2+1] >= '0' && mseed[i*2+1] <= '9' {
+			tmp2 = mseed[i*2+1] - '0'
+		} else {
+			tmp2 = mseed[i*2+1] + 10 - 'A'
+		}
+		b[i] = tmp1<<4 | tmp2
+	}
+	return b, nil
 }
 
 func (dpk *DerivedPubKey) Serialize() []byte {
