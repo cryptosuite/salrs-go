@@ -1,5 +1,11 @@
 package salrs
 
+import "math/big"
+
+
+type Poly struct{
+	poly
+}
 type poly struct {
 	coeffs [N]int64
 }
@@ -49,6 +55,13 @@ func reduce(a int64) int64 {
  *              - b *poly: pointer to second input polynomial
  *              - c *poly: pointer to output polynomial
  **************************************************/
+func (z *poly) Add(a, b *poly) *poly {
+	for i := 0; i < N; i++ {
+		z.coeffs[i] = a.coeffs[i] + b.coeffs[i]
+		z.coeffs[i] = reduce(z.coeffs[i])
+	}
+	return z
+}
 func polyAddition(a poly, b poly) (c poly) {
 	//var i int32
 	var C poly
@@ -70,6 +83,13 @@ func polyAddition(a poly, b poly) (c poly) {
  *              - b *poly: pointer to second input polynomial
  *              - poly *c: pointer to output polynomial
  **************************************************/
+func (z *poly) Sub(a, b *poly) *poly {
+	for i := 0; i < N; i++ {
+		z.coeffs[i] = a.coeffs[i] - b.coeffs[i]
+		z.coeffs[i] = reduce(z.coeffs[i])
+	}
+	return z
+}
 func polySubstraction(a poly, b poly) (c poly) {
 	//int i;
 	var C poly
@@ -91,7 +111,18 @@ func polySubstraction(a poly, b poly) (c poly) {
  *              - long long b: pointer to second input number
 
  **************************************************/
-func bigNumberMultiplication(a int64, b int64) (ans int64) {
+// can be substituded by big.Int
+//TODO: this function equal to the next function? but there are some wrong test
+func BigNumberMultiplication2(a, b int64) (res int64) {
+	var factor1, factor2, modQ big.Int
+	factor1 = *factor1.SetInt64(a)
+	factor2 = *factor2.SetInt64(b)
+	modQ = *modQ.SetInt64(int64(Q))
+	tmp := big.NewInt(0).Mul(&factor1, &factor2)
+	tmp.Mod(tmp, &modQ)
+	return reduce(tmp.Int64())
+}
+func BigNumberMultiplication(a int64, b int64) (ans int64) {
 	var tmp1 [30]int64
 	var an int64
 	var count1, count2, i int = 0, 0, 0
@@ -176,11 +207,18 @@ func bigNumberMultiplication(a int64, b int64) (ans int64) {
  *              - long long *b: pointer to input number
  *              - poly *c: pointer to output polynomial
  **************************************************/
+func (z *poly) Scale(a *poly, b int64) *poly {
+	for i := 0; i < N; i++ {
+		z.coeffs[i] = BigNumberMultiplication(a.coeffs[i], b)
+		z.coeffs[i] = reduce(z.coeffs[i])
+	}
+	return z
+}
 func polyNumMulPoly(a poly, b int64) (c poly) {
 	var i int
 	var C poly
 	for i = 0; i < N; i++ {
-		C.coeffs[i] = bigNumberMultiplication(a.coeffs[i], b)
+		C.coeffs[i] = BigNumberMultiplication(a.coeffs[i], b)
 		C.coeffs[i] = reduce(C.coeffs[i])
 	}
 	return C
@@ -198,12 +236,22 @@ func polyNumMulPoly(a poly, b int64) (c poly) {
  *              - poly *a: pointer input and output polynomial
 
  **************************************************/
+//TODO: reduce(??)
+func (z *poly) Mod(a *poly, n int64, r int64) *poly {
+	if n == 32 {
+		for i := 0; i < 32; i++ {
+			z.coeffs[i] += BigNumberMultiplication(a.coeffs[i+32], r)
+			z.coeffs[i] = reduce(z.coeffs[i])
+		}
+	}
+	return z
+}
 func polyModOne(r0 int64, n int64, a poly) (b poly) {
 	var i int
 	var B poly
 	if n == 32 {
 		for i = 0; i < 32; i++ {
-			B.coeffs[i] += bigNumberMultiplication(a.coeffs[i+32], r0)
+			B.coeffs[i] += BigNumberMultiplication(a.coeffs[i+32], r0)
 			B.coeffs[i] = reduce(a.coeffs[i])
 		}
 	}
@@ -221,6 +269,19 @@ func polyModOne(r0 int64, n int64, a poly) (b poly) {
  *              - poly *c: pointer to output polynomial
 
  **************************************************/
+func (z *poly) MulLow16(a, b *poly) *poly {
+	for i := 0; i < N; i++ {
+		z.coeffs[i] = 0
+	}
+	for i := 0; i < 16; i++ {
+		for j := 0; j < 16; j++ {
+			m := i + j
+			z.coeffs[m] += BigNumberMultiplication(a.coeffs[i], b.coeffs[j])
+			z.coeffs[m] = reduce(z.coeffs[m])
+		}
+	}
+	return z
+}
 func polyMulNormalSixteen(a poly, b poly) (c poly) {
 	var m, i, j int
 	var C poly
@@ -230,7 +291,7 @@ func polyMulNormalSixteen(a poly, b poly) (c poly) {
 	for i = 0; i < 16; i++ {
 		for j = 0; j < 16; j++ {
 			m = i + j
-			C.coeffs[m] += bigNumberMultiplication(a.coeffs[i], b.coeffs[j])
+			C.coeffs[m] += BigNumberMultiplication(a.coeffs[i], b.coeffs[j])
 			C.coeffs[m] = reduce(C.coeffs[m])
 		}
 	}
@@ -252,6 +313,52 @@ func polyMulNormalSixteen(a poly, b poly) (c poly) {
  *              - long long n: degree of a
 
  **************************************************/
+func (z *poly) Divide() (res [8]*poly) {
+	for i := 0; i < 8; i++ {
+		res[i] = NewPoly()
+	}
+	var a [3]*poly  //a1=a[1],a2=a[2]
+	var a1 [3]*poly //a11=a1[1],a12=a1[2]
+	var a2 [3]*poly //a21=a2[1],a22=a2[2]
+	for i := 1; i < 3; i++ {
+		a[i] = NewPoly()
+		a1[i] = NewPoly()
+		a2[i] = NewPoly()
+	}
+
+	var tmp [8]int64
+	// compute a1,a2
+	for i := 0; i < N/2; i++ {
+		tmp[4] = BigNumberMultiplication(z.coeffs[i+N/2], -R4)
+		a[1].coeffs[i] = reduce(z.coeffs[i] + tmp[4])
+		a[2].coeffs[i] = reduce(z.coeffs[i] + tmp[4])
+	}
+	// compute a11,a12,a21,a22
+	for i := 0; i < N/4; i++ {
+		tmp[2] = BigNumberMultiplication(z.coeffs[i+N/4], -R2)
+		tmp[6] = BigNumberMultiplication(z.coeffs[i+N/4], -R6)
+		a1[1].coeffs[i] = reduce(a[1].coeffs[i] + tmp[6])
+		a1[2].coeffs[i] = reduce(a[1].coeffs[i] - tmp[6])
+		a2[1].coeffs[i] = reduce(a[2].coeffs[i] - tmp[2])
+		a2[2].coeffs[i] = reduce(a[2].coeffs[i] - tmp[2])
+	}
+	// compute a111~a222
+	for i := 0; i < N/8; i++ {
+		tmp[1] = BigNumberMultiplication(a1[0].coeffs[i+N/8], -R1)
+		tmp[3] = BigNumberMultiplication(a1[0].coeffs[i+N/8], -R3)
+		tmp[5] = BigNumberMultiplication(a1[0].coeffs[i+N/8], -R5)
+		tmp[7] = BigNumberMultiplication(a1[0].coeffs[i+N/8], -R7)
+		res[0].coeffs[i] = reduce(a1[1].coeffs[i] + tmp[7]) //a111
+		res[1].coeffs[i] = reduce(a1[1].coeffs[i] + tmp[7]) //a112
+		res[2].coeffs[i] = reduce(a1[2].coeffs[i] + tmp[3]) //a121
+		res[3].coeffs[i] = reduce(a1[2].coeffs[i] + tmp[3]) //a122
+		res[4].coeffs[i] = reduce(a2[1].coeffs[i] + tmp[5]) //a211
+		res[5].coeffs[i] = reduce(a2[1].coeffs[i] + tmp[5]) //a212
+		res[6].coeffs[i] = reduce(a2[2].coeffs[i] + tmp[1]) //a221
+		res[7].coeffs[i] = reduce(a2[2].coeffs[i] + tmp[1]) //a222
+	}
+	return res
+}
 func polyModEight(a poly) (a111 poly, a112 poly, a121 poly, a122 poly,
 	a211 poly, a212 poly, a221 poly, a222 poly) {
 	var tmp, i int64
@@ -265,56 +372,70 @@ func polyModEight(a poly) (a111 poly, a112 poly, a121 poly, a122 poly,
 		a21.coeffs[i] = 0
 		a22.coeffs[i] = 0
 	}
+	// compute a1,a2
 	for i = 0; i < N/2; i++ {
-		tmp = bigNumberMultiplication(a.coeffs[i+N/2], -R4)
+		tmp = BigNumberMultiplication(a.coeffs[i+N/2], -R4)
 		a1.coeffs[i] = a.coeffs[i] + tmp
 		a1.coeffs[i] = reduce(a1.coeffs[i])
 		a2.coeffs[i] = a.coeffs[i] - tmp
 		a2.coeffs[i] = reduce(a2.coeffs[i])
 	}
+	//compute a11,a12
 	for i = 0; i < N/4; i++ {
-		tmp = bigNumberMultiplication(a1.coeffs[i+N/4], -R6)
+		tmp = BigNumberMultiplication(a1.coeffs[i+N/4], -R6)
 		a11.coeffs[i] = a1.coeffs[i] + tmp
 		a11.coeffs[i] = reduce(a11.coeffs[i])
 		a12.coeffs[i] = a1.coeffs[i] - tmp
 		a12.coeffs[i] = reduce(a12.coeffs[i])
 	}
+	// compute a21,a22
 	for i = 0; i < N/4; i++ {
-		tmp = bigNumberMultiplication(a2.coeffs[i+N/4], -R2)
+		tmp = BigNumberMultiplication(a2.coeffs[i+N/4], -R2)
 		a21.coeffs[i] = a2.coeffs[i] + tmp
 		a21.coeffs[i] = reduce(a21.coeffs[i])
 		a22.coeffs[i] = a2.coeffs[i] - tmp
 		a22.coeffs[i] = reduce(a22.coeffs[i])
 	}
 	for i = 0; i < N/8; i++ {
-		tmp = bigNumberMultiplication(a11.coeffs[i+N/8], -R7)
+		tmp = BigNumberMultiplication(a11.coeffs[i+N/8], -R7)
 		A111.coeffs[i] = a11.coeffs[i] + tmp
 		A111.coeffs[i] = reduce(A111.coeffs[i])
 		A112.coeffs[i] = a11.coeffs[i] - tmp
 		A112.coeffs[i] = reduce(A112.coeffs[i])
 	}
 	for i = 0; i < N/8; i++ {
-		tmp = bigNumberMultiplication(a12.coeffs[i+N/8], -R3)
+		tmp = BigNumberMultiplication(a12.coeffs[i+N/8], -R3)
 		A121.coeffs[i] = a12.coeffs[i] + tmp
 		A121.coeffs[i] = reduce(A121.coeffs[i])
 		A122.coeffs[i] = a12.coeffs[i] - tmp
 		A122.coeffs[i] = reduce(A122.coeffs[i])
 	}
 	for i = 0; i < N/8; i++ {
-		tmp = bigNumberMultiplication(a21.coeffs[i+N/8], -R5)
+		tmp = BigNumberMultiplication(a21.coeffs[i+N/8], -R5)
 		A211.coeffs[i] = a21.coeffs[i] + tmp
 		A211.coeffs[i] = reduce(A211.coeffs[i])
 		A212.coeffs[i] = a21.coeffs[i] - tmp
 		A212.coeffs[i] = reduce(A212.coeffs[i])
 	}
 	for i = 0; i < N/8; i++ {
-		tmp = bigNumberMultiplication(a22.coeffs[i+N/8], -R1)
+		tmp = BigNumberMultiplication(a22.coeffs[i+N/8], -R1)
 		A221.coeffs[i] = a22.coeffs[i] + tmp
 		A221.coeffs[i] = reduce(A221.coeffs[i])
 		A222.coeffs[i] = a22.coeffs[i] - tmp
 		A222.coeffs[i] = reduce(A222.coeffs[i])
 	}
 	return A111, A112, A121, A122, A211, A212, A221, A222
+}
+
+// MulX16 compute z=a*x^16 and return z
+func (z *poly) MulX16(a *poly) *poly {
+	for i := 0; i < N; i++ {
+		z.coeffs[i] = 0
+	}
+	for i := 32; i >= 0; i-- {
+		z.coeffs[i+16] = a.coeffs[i]
+	}
+	return z
 }
 
 /*************************************************
@@ -329,6 +450,38 @@ func polyModEight(a poly) (a111 poly, a112 poly, a121 poly, a122 poly,
  *              - poly *c: pointer to output polynomial
 
  **************************************************/
+func (z *poly) MulKaratsuba(a, b *poly) *poly {
+	var f, g, fg [2]*poly
+	for i := 0; i < 2; i++ {
+		f[i] = NewPoly()
+		g[i] = NewPoly()
+		fg[i] = NewPoly()
+	}
+	// compute f0,f1,g0,g1
+	for i := 0; i < 16; i++ {
+		f[0].coeffs[i] = a.coeffs[i]
+		f[1].coeffs[i] = a.coeffs[i+16]
+		g[0].coeffs[i] = b.coeffs[i]
+		g[1].coeffs[i] = b.coeffs[i+16]
+	}
+	// compute f0g0,f1g1
+	for i := 0; i < 2; i++ {
+		fg[i] = fg[i].MulLow16(f[i], g[i])
+	}
+
+	//copmute f0g0-f1g1*x^16
+	tmp := NewPoly().MulX16(fg[1])
+	tmp = NewPoly().MulX16(tmp)
+	res1 := NewPoly().Sub(fg[0], fg[1])
+
+	// compute x^16*(f0+f1)(g0+g1)
+	tmp1 := NewPoly().Add(f[0], f[1])
+	tmp2 := NewPoly().Add(g[0], g[1])
+	tmp3 := NewPoly().MulLow16(tmp1, tmp2)
+	res2 := NewPoly().MulX16(tmp3)
+	z = NewPoly().Add(res1, res2)
+	return z
+}
 func polyMulKaratsuba(a poly, b poly) (c poly) {
 	var a0, a1, b0, b1 poly
 	var C poly
@@ -392,6 +545,105 @@ func polyMulKaratsuba(a poly, b poly) (c poly) {
  *              - poly *c: pointer to output polynomial
 
  **************************************************/
+func (z *poly) Mul(a, b *poly) *poly {
+	da := a.Divide()
+	db := b.Divide()
+	var dz [8]*poly
+	for i := 0; i < 8; i++ {
+		dz[i] = NewPoly().MulKaratsuba(da[i], db[i])
+	}
+	var res, res1, res2 [3]*poly
+
+	// compute z111,z112
+	for i := 0; i < 32; i++ {
+		dz[0].coeffs[i] -= reduce(BigNumberMultiplication(dz[0].coeffs[i+32], R7))
+		dz[0].coeffs[i] = reduce(dz[0].coeffs[i])
+		dz[1].coeffs[i] -= reduce(BigNumberMultiplication(dz[1].coeffs[i+32], R7))
+		dz[1].coeffs[i] = reduce(dz[1].coeffs[i])
+		dz[2].coeffs[i] -= reduce(BigNumberMultiplication(dz[2].coeffs[i+32], R3))
+		dz[2].coeffs[i] = reduce(dz[2].coeffs[i])
+		dz[3].coeffs[i] -= reduce(BigNumberMultiplication(dz[3].coeffs[i+32], R3))
+		dz[3].coeffs[i] = reduce(dz[3].coeffs[i])
+		dz[4].coeffs[i] -= reduce(BigNumberMultiplication(dz[4].coeffs[i+32], R5))
+		dz[4].coeffs[i] = reduce(dz[4].coeffs[i])
+		dz[5].coeffs[i] -= reduce(BigNumberMultiplication(dz[5].coeffs[i+32], R5))
+		dz[5].coeffs[i] = reduce(dz[5].coeffs[i])
+		dz[6].coeffs[i] -= reduce(BigNumberMultiplication(dz[6].coeffs[i+32], R1))
+		dz[6].coeffs[i] = reduce(dz[6].coeffs[i])
+		dz[7].coeffs[i] -= reduce(BigNumberMultiplication(dz[7].coeffs[i+32], R1))
+		dz[7].coeffs[i] = reduce(dz[7].coeffs[i])
+	}
+	for i := 0; i < 32; i++ {
+		//c111
+		dz[0].coeffs[i+32] = dz[0].coeffs[i]
+		dz[0].coeffs[i] = reduce(reduce(BigNumberMultiplication(dz[0].coeffs[i], -R7)))
+		//c112
+		dz[1].coeffs[i+32] = reduce(-dz[1].coeffs[i])
+		dz[1].coeffs[i] = reduce(-BigNumberMultiplication(dz[1].coeffs[i], R7))
+		//c121
+		dz[2].coeffs[i+32] = dz[2].coeffs[i]
+		dz[2].coeffs[i] = reduce(BigNumberMultiplication(dz[2].coeffs[i], -R3))
+		//c122
+		dz[3].coeffs[i+32] = reduce(-dz[3].coeffs[i])
+		dz[3].coeffs[i] = reduce(BigNumberMultiplication(dz[3].coeffs[i], R3))
+		//c211
+		dz[4].coeffs[i] = dz[4].coeffs[i]
+		dz[4].coeffs[i+32] = reduce(BigNumberMultiplication(dz[4].coeffs[i], -R5))
+		//c212
+		dz[5].coeffs[i+32] = reduce(-dz[5].coeffs[i])
+		dz[5].coeffs[i] = reduce(BigNumberMultiplication(dz[5].coeffs[i], R5))
+		//c221
+		dz[6].coeffs[i] = dz[6].coeffs[i]
+		dz[6].coeffs[i+32] = reduce(BigNumberMultiplication(dz[6].coeffs[i], -R1))
+		//c222
+		dz[7].coeffs[i+32] = reduce(-dz[7].coeffs[i])
+		dz[7].coeffs[i] = reduce(-BigNumberMultiplication(dz[7].coeffs[i], R1))
+	}
+
+	// compute z11,z12,z21,z22
+	res1[1] = NewPoly().Add(dz[0], dz[1])
+	res1[2] = NewPoly().Add(dz[2], dz[3])
+	res2[1] = NewPoly().Add(dz[4], dz[5])
+	res2[2] = NewPoly().Add(dz[6], dz[7])
+	for i := 0; i < 64; i++ {
+		res1[1].coeffs[i] = reduce(BigNumberMultiplication(res1[1].coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R1))))
+		res1[2].coeffs[i] = reduce(BigNumberMultiplication(res1[2].coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R5))))
+		res2[1].coeffs[i] = reduce(BigNumberMultiplication(res2[1].coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R3))))
+		res2[2].coeffs[i] = reduce(BigNumberMultiplication(res2[2].coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R7))))
+	}
+	for i := 0; i < 64; i++ {
+		res1[1].coeffs[i+64] = res1[1].coeffs[i]
+		res1[1].coeffs[i] = reduce(BigNumberMultiplication(res1[1].coeffs[i], -R6))
+
+		res1[2].coeffs[i+64] = reduce(-res1[2].coeffs[i])
+		res1[2].coeffs[i] = reduce(-BigNumberMultiplication(res1[2].coeffs[i], R6))
+
+		res2[1].coeffs[i+64] = res2[1].coeffs[i]
+		res2[1].coeffs[i] = reduce(BigNumberMultiplication(res2[1].coeffs[i], -R2))
+
+		res2[2].coeffs[i+64] = reduce(-res2[2].coeffs[i])
+		res2[2].coeffs[i] = reduce(-BigNumberMultiplication(res2[2].coeffs[i], R6))
+	}
+
+	//compute z1,z2
+	res[1] = NewPoly().Add(res1[1], res1[2])
+	res[2] = NewPoly().Add(res2[1], res2[2])
+	for i := 0; i < 128; i++ {
+		res[1].coeffs[i] = reduce(BigNumberMultiplication(res[1].coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R2))))
+		res[2].coeffs[i] = reduce(BigNumberMultiplication(res[2].coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R6))))
+	}
+	for i := 0; i < 128; i++ {
+		res[1].coeffs[i+128] = res[1].coeffs[i]
+		res[1].coeffs[i+128] = reduce(BigNumberMultiplication(res[1].coeffs[i], -R4))
+		res[2].coeffs[i+128] = reduce(-res[2].coeffs[i])
+		res[2].coeffs[i+128] = reduce(-BigNumberMultiplication(res[2].coeffs[i], R4))
+	}
+	z=NewPoly().Add(res[1],res[2])
+	for i := 0; i < 128; i++ {
+		z.coeffs[i]=reduce(BigNumberMultiplication(z.coeffs[i],BigNumberMultiplication((Q+1)/2,R4)))
+	}
+	return z
+}
 func polyMultiplication(a poly, b poly) (c poly) {
 	var i int
 	var C poly
@@ -402,7 +654,6 @@ func polyMultiplication(a poly, b poly) (c poly) {
 
 	a111, a112, a121, a122, a211, a212, a221, a222 = polyModEight(a)
 	b111, b112, b121, b122, b211, b212, b221, b222 = polyModEight(b)
-
 	c111 = polyMulKaratsuba(a111, b111)
 	c112 = polyMulKaratsuba(a112, b112)
 	c121 = polyMulKaratsuba(a121, b121)
@@ -413,55 +664,61 @@ func polyMultiplication(a poly, b poly) (c poly) {
 	c222 = polyMulKaratsuba(a222, b222)
 
 	for i = 0; i < 32; i++ {
-		c111.coeffs[i] -= reduce(bigNumberMultiplication(c111.coeffs[i+32], R7))
+		c111.coeffs[i] -= reduce(BigNumberMultiplication(c111.coeffs[i+32], R7))
 		c111.coeffs[i] = reduce(c111.coeffs[i])
 	}
 	for i = 0; i < 32; i++ {
-		c112.coeffs[i] += reduce(bigNumberMultiplication(c112.coeffs[i+32], R7))
+		c112.coeffs[i] += reduce(BigNumberMultiplication(c112.coeffs[i+32], R7))
 		c112.coeffs[i] = reduce(c112.coeffs[i])
 	}
 	for i = 0; i < 32; i++ {
-		c121.coeffs[i] -= reduce(bigNumberMultiplication(c121.coeffs[i+32], R3))
+		c121.coeffs[i] -= reduce(BigNumberMultiplication(c121.coeffs[i+32], R3))
 		c121.coeffs[i] = reduce(c121.coeffs[i])
 	}
 	for i = 0; i < 32; i++ {
-		c122.coeffs[i] += reduce(bigNumberMultiplication(c122.coeffs[i+32], R3))
+		c122.coeffs[i] += reduce(BigNumberMultiplication(c122.coeffs[i+32], R3))
 		c122.coeffs[i] = reduce(c122.coeffs[i])
 	}
 	for i = 0; i < 32; i++ {
-		c211.coeffs[i] -= reduce(bigNumberMultiplication(c211.coeffs[i+32], R5))
+		c211.coeffs[i] -= reduce(BigNumberMultiplication(c211.coeffs[i+32], R5))
 		c211.coeffs[i] = reduce(c211.coeffs[i])
 	}
 	for i = 0; i < 32; i++ {
-		c212.coeffs[i] += reduce(bigNumberMultiplication(c212.coeffs[i+32], R5))
+		c212.coeffs[i] += reduce(BigNumberMultiplication(c212.coeffs[i+32], R5))
 		c212.coeffs[i] = reduce(c212.coeffs[i])
 	}
 	for i = 0; i < 32; i++ {
-		c221.coeffs[i] -= reduce(bigNumberMultiplication(c221.coeffs[i+32], R1))
+		c221.coeffs[i] -= reduce(BigNumberMultiplication(c221.coeffs[i+32], R1))
 		c221.coeffs[i] = reduce(c221.coeffs[i])
 	}
 	for i = 0; i < 32; i++ {
-		c222.coeffs[i] += reduce(bigNumberMultiplication(c222.coeffs[i+32], R1))
+		c222.coeffs[i] += reduce(BigNumberMultiplication(c222.coeffs[i+32], R1))
 		c222.coeffs[i] = reduce(c222.coeffs[i])
 	}
-
 	for i = 0; i < 32; i++ {
 		c111.coeffs[i+32] = c111.coeffs[i]
-		c111.coeffs[i] = reduce(bigNumberMultiplication(c111.coeffs[i], -R7))
+		c111.coeffs[i] = reduce(BigNumberMultiplication(c111.coeffs[i], -R7))
+
 		c112.coeffs[i+32] = reduce(-c112.coeffs[i])
-		c112.coeffs[i] = reduce(-bigNumberMultiplication(c112.coeffs[i], R7))
+		c112.coeffs[i] = reduce(-BigNumberMultiplication(c112.coeffs[i], R7))
+
 		c121.coeffs[i+32] = c121.coeffs[i]
-		c121.coeffs[i] = reduce(bigNumberMultiplication(c121.coeffs[i], -R3))
+		c121.coeffs[i] = reduce(BigNumberMultiplication(c121.coeffs[i], -R3))
+
 		c122.coeffs[i+32] = reduce(-c122.coeffs[i])
-		c122.coeffs[i] = reduce(-bigNumberMultiplication(c122.coeffs[i], R3))
+		c122.coeffs[i] = reduce(-BigNumberMultiplication(c122.coeffs[i], R3))
+
 		c211.coeffs[i+32] = c211.coeffs[i]
-		c211.coeffs[i] = reduce(bigNumberMultiplication(c211.coeffs[i], -R5))
+		c211.coeffs[i] = reduce(BigNumberMultiplication(c211.coeffs[i], -R5))
+
 		c212.coeffs[i+32] = reduce(-c212.coeffs[i])
-		c212.coeffs[i] = reduce(-bigNumberMultiplication(c212.coeffs[i], R5))
+		c212.coeffs[i] = reduce(-BigNumberMultiplication(c212.coeffs[i], R5))
+
 		c221.coeffs[i+32] = c221.coeffs[i]
-		c221.coeffs[i] = reduce(bigNumberMultiplication(c221.coeffs[i], -R1))
+		c221.coeffs[i] = reduce(BigNumberMultiplication(c221.coeffs[i], -R1))
+
 		c222.coeffs[i+32] = reduce(-c222.coeffs[i])
-		c222.coeffs[i] = reduce(-bigNumberMultiplication(c222.coeffs[i], R1))
+		c222.coeffs[i] = reduce(-BigNumberMultiplication(c222.coeffs[i], R1))
 	}
 	c11 = polyAddition(c111, c112)
 	c12 = polyAddition(c121, c122)
@@ -469,41 +726,54 @@ func polyMultiplication(a poly, b poly) (c poly) {
 	c22 = polyAddition(c221, c222)
 
 	for i = 0; i < 64; i++ {
-		c11.coeffs[i] = reduce(bigNumberMultiplication(c11.coeffs[i], reduce(bigNumberMultiplication((Q+1)/2, R1))))
-		c12.coeffs[i] = reduce(bigNumberMultiplication(c12.coeffs[i], reduce(bigNumberMultiplication((Q+1)/2, R5))))
-		c21.coeffs[i] = reduce(bigNumberMultiplication(c21.coeffs[i], reduce(bigNumberMultiplication((Q+1)/2, R3))))
-		c22.coeffs[i] = reduce(bigNumberMultiplication(c22.coeffs[i], reduce(bigNumberMultiplication((Q+1)/2, R7))))
+		c11.coeffs[i] = reduce(BigNumberMultiplication(c11.coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R1))))
+		c12.coeffs[i] = reduce(BigNumberMultiplication(c12.coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R5))))
+		c21.coeffs[i] = reduce(BigNumberMultiplication(c21.coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R3))))
+		c22.coeffs[i] = reduce(BigNumberMultiplication(c22.coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R7))))
 	}
 
 	for i = 0; i < 64; i++ {
 		c11.coeffs[i+64] = c11.coeffs[i]
-		c11.coeffs[i] = reduce(bigNumberMultiplication(c11.coeffs[i], -R6))
+		c11.coeffs[i] = reduce(BigNumberMultiplication(c11.coeffs[i], -R6))
 		c12.coeffs[i+64] = reduce(-c12.coeffs[i])
-		c12.coeffs[i] = reduce(-bigNumberMultiplication(c12.coeffs[i], R6))
+		c12.coeffs[i] = reduce(-BigNumberMultiplication(c12.coeffs[i], R6))
 		c21.coeffs[i+64] = c21.coeffs[i]
-		c21.coeffs[i] = reduce(bigNumberMultiplication(c21.coeffs[i], -R2))
+		c21.coeffs[i] = reduce(BigNumberMultiplication(c21.coeffs[i], -R2))
 		c22.coeffs[i+64] = reduce(-c22.coeffs[i])
-		c22.coeffs[i] = reduce(-bigNumberMultiplication(c22.coeffs[i], R2))
+		c22.coeffs[i] = reduce(-BigNumberMultiplication(c22.coeffs[i], R2))
 	}
 	c1 = polyAddition(c11, c12)
 	c2 = polyAddition(c21, c22)
 	for i = 0; i < 128; i++ {
-		c1.coeffs[i] = reduce(bigNumberMultiplication(c1.coeffs[i], reduce(bigNumberMultiplication((Q+1)/2, R2))))
-		c2.coeffs[i] = reduce(bigNumberMultiplication(c2.coeffs[i], reduce(bigNumberMultiplication((Q+1)/2, R6))))
+		c1.coeffs[i] = reduce(BigNumberMultiplication(c1.coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R2))))
+		c2.coeffs[i] = reduce(BigNumberMultiplication(c2.coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R6))))
 	}
 
 	for i = 0; i < 128; i++ {
 		c1.coeffs[i+128] = c1.coeffs[i]
-		c1.coeffs[i] = reduce(bigNumberMultiplication(c1.coeffs[i], -R4))
+		c1.coeffs[i] = reduce(BigNumberMultiplication(c1.coeffs[i], -R4))
 		c2.coeffs[i+128] = reduce(-c2.coeffs[i])
-		c2.coeffs[i] = reduce(-bigNumberMultiplication(c2.coeffs[i], R4))
+		c2.coeffs[i] = reduce(-BigNumberMultiplication(c2.coeffs[i], R4))
 	}
 	C = polyAddition(c1, c2)
 	for i = 0; i < N; i++ {
-		C.coeffs[i] = reduce(bigNumberMultiplication(C.coeffs[i], reduce(bigNumberMultiplication((Q+1)/2, R4))))
+		C.coeffs[i] = reduce(BigNumberMultiplication(C.coeffs[i], reduce(BigNumberMultiplication((Q+1)/2, R4))))
 	}
 
 	return C
+}
+
+func NewPoly() (res *poly) {
+	res = new(poly)
+	for i := 0; i < N; i++ {
+		res.coeffs[i] = 0
+	}
+	return res
+}
+func NewPoly2() (res *Poly){
+	return &Poly{
+		*NewPoly(),
+	}
 }
 
 /*
@@ -535,7 +805,7 @@ func polyMultiplication(a poly, b poly)(c poly){
 	}
 	for i = 0; i < N; i++{
 		for j = 0; j < N; j++{
-			tmp512[i + j] += reduce(bigNumberMultiplication(a.coeffs[i], b.coeffs[j]))
+			tmp512[i + j] += reduce(BigNumberMultiplication(a.coeffs[i], b.coeffs[j]))
 		}
 	}
 	for i = 0; i < N ; i++{
