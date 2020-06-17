@@ -1,13 +1,5 @@
 package salrs
 
-/*
-//#cgo CFLAGS: -I./kyber_all_win
-//#cgo LDFLAGS: -L${SRCDIR}/kyber_all_win -lkyber_all
-//
-//#include "kyber_all.h"
-import "C"
-*/
-
 import (
 	"errors"
 	"fmt"
