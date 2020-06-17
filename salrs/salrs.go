@@ -3,8 +3,7 @@ package salrs
 import (
 	"errors"
 	"fmt"
-	//"github.com/cryptosuite/kyber-go/kyber"
-	"github.com/lynzz1701/kyber-go/kyber"
+	"github.com/cryptosuite/kyber-go/kyber"
 )
 
 /*
