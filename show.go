@@ -5,14 +5,26 @@ import (
 	"github.com/cryptosuite/salrs-go/salrs"
 	"github.com/mattn/go-gtk/glib"
 	"github.com/mattn/go-gtk/gtk"
+	"math/rand"
 	"os"
 	"time"
 	"unsafe"
 )
 
 const (
-	round = 5
+	round = 10
 )
+
+func randombytes(len int) (sd []byte) {
+	rand.Seed(time.Now().UnixNano())
+	var i int
+	tmp := make([]byte, len, len)
+	for i = 0; i < len; i++ {
+		num := rand.Intn(256)
+		tmp[i] = byte(num)
+	}
+	return tmp
+}
 
 func main(){
 	var i, tmp, c int
@@ -61,7 +73,7 @@ func main(){
 		}
 		r = tmp
 		stime.SetText("ring size reset successfully")
-		fmt.Printf("ring has been reset as %d", r)
+		fmt.Printf("\nring has been reset as %d\n\n", r)
 	})
 	btime.Connect("pressed", timeTest, &r)
 
@@ -92,23 +104,42 @@ func main(){
 
 	bgenmaskey := gtk.NewButtonWithLabel("generate master key")
 	bgenmaskey.SetSizeRequest(150, 50)
-	sgenmaskey  := gtk.LabelWithMnemonic(" ")
+	sgenmaskeyy  := gtk.LabelWithMnemonic(" ")
+	sgenmaskeyy .SetSizeRequest(200, 50)
+	sgenmaskey := gtk.LabelWithMnemonic("your master public key:")
 	sgenmaskey .SetSizeRequest(200, 50)
-	sgenmaskey2 := gtk.LabelWithMnemonic("your master public key:")
+	sgenmaskey2 := gtk.LabelWithMnemonic("your key seed:")
 	sgenmaskey2 .SetSizeRequest(200, 50)
 	enmpk := gtk.NewEntry()
 	enmpk.SetSizeRequest(200, 50)
 	enmpk.SetText(" ")
+	enmpk2 := gtk.NewEntry()
+	enmpk2.SetSizeRequest(200, 50)
+	enmpk2.SetText(" ")
 	bgenmaskey .Connect("pressed", func(){
-		mpk, msvk, mssk, err = salrs.GenerateMasterKey(mseed)
+		str := enmpk2.GetText()
+		if len(str) == 0{
+			mseed = randombytes(32)
+		}else{
+			mseed = str2bytes(str)
+			mseed, err = salrs.DeseralizeMseed(mseed)
+			if err != nil{
+				fmt.Println(err)
+			}
+		}
+		fmt.Println(len(str))
+		mpk, msvk, mssk, mseed, err = salrs.GenerateMasterKey(mseed)
 		if err != nil{
 			fmt.Println(err)
 		}else{
-			fmt.Println(mpk)
+			fmt.Println(mseed)
 			mpkbytestr = mpk.Serialize()
 			enmpk.SetText(bytes2str(mpkbytestr))
 			enmpk.Show()
-			sgenmaskey .SetText("generate master key successfully")
+			mseed = salrs.SerializeMseed(mseed)
+			enmpk2.SetText(bytes2str(mseed))
+			enmpk2.Show()
+			sgenmaskeyy .SetText("generate master key successfully")
 		}
 	})
 
@@ -193,12 +224,12 @@ func main(){
 	layout.Put(entime, 850,50)
 	layout.Put(bsetup, 50, 120)
 	layout.Put(ssetup, 250, 120)
-	//layout.Put(bgenseed, 50, 190)
-	//layout.Put(sgenseed, 250, 190)
-	layout.Put(bgenmaskey, 50, 260)
-	layout.Put(sgenmaskey, 250, 260)
-	layout.Put(sgenmaskey2, 550, 260)
-	layout.Put(enmpk, 850, 260)
+	layout.Put(bgenmaskey, 50, 190)
+	layout.Put(sgenmaskeyy, 250, 190)
+	layout.Put(sgenmaskey, 550, 250)
+	layout.Put(sgenmaskey2, 550, 190)
+	layout.Put(enmpk, 850, 250)
+	layout.Put(enmpk2, 850, 190)
 	layout.Put(bgendpkey, 50, 330)
 	layout.Put(sgendpkey, 250, 330)
 	layout.Put(sgendpkey2, 550, 330)
@@ -269,7 +300,7 @@ func timeTest(ctx *glib.CallbackContext) {
 		dpkbytestr := make([]byte, salrs.DpkByteLen)
 		dpkring.R = r
 
-		fmt.Printf("time test start\n\n")
+		fmt.Printf("\n\ntime test start\n\n")
 		//setup
 		start := float64(time.Now().UnixNano())
 		for i = 0; i < round; i++ {
@@ -313,7 +344,7 @@ func timeTest(ctx *glib.CallbackContext) {
 		//genereta master key
 		start = float64(time.Now().UnixNano())
 		for i = 0; i < round; i++ {
-			mpk, msvk, mssk, err = salrs.GenerateMasterKey(mseed)
+			mpk, msvk, mssk, mseed, err = salrs.GenerateMasterKey(mseed)
 		}
 		end = float64(time.Now().UnixNano())
 		fmt.Printf("Generate Master Key time consumed:%vs\n", (end-start)/1000000000/round)
