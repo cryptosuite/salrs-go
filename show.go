@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kbb-98/salrs-go-1/salrs"
+	"github.com/cryptosuite/salrs-go/salrs"
 	"github.com/mattn/go-gtk/glib"
 	"github.com/mattn/go-gtk/gtk"
 	"os"
