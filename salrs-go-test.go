@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	//"github.com/cryptosuite/salrs-go/salrs"
-	"github.com/kbb-98/salrs-go-1/salrs"
+	"github.com/cryptosuite/salrs-go/salrs"
 	"time"
 )
 
@@ -76,7 +75,7 @@ func main() {
 	//genereta master key
 	start = float64(time.Now().UnixNano())
 	for i = 0; i < round; i++ {
-		mpk, msvk, mssk, err = salrs.GenerateMasterKey(mseed)
+		mpk, msvk, mssk, mseed, err = salrs.GenerateMasterKey(mseed)
 	}
 	end = float64(time.Now().UnixNano())
 	fmt.Printf("Generate Master Key time consumed:%vs\n", (end-start)/1000000000/round)
