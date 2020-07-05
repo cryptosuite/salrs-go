@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cryptosuite/kyber-go/kyber"
+	"log"
 )
 
 /*
@@ -12,7 +13,7 @@ This file contains all the public constant, type, and functions that are availab
 
 //	public const def	begin
 const PassPhaseByteLen = 32
-
+// TODO: This value should be a const value?
 var pkem = kyber.Kyber768
 
 const (
@@ -38,7 +39,7 @@ const (
 	PackSByteLen = 480
 	PackZByteLen = 3520
 	PackIByteLen = 1152
-	cstr     = "today_is_a_good_day_today_is_a_good_day_today_is_a_good_day"
+	cstr     = "today_is_a_good_day_today_is_a_good_day_today_is_a_good_day"     //TODO:this const string should be random?
 	CSTRSIZE = len(cstr)
 )
 
@@ -55,7 +56,7 @@ var(
 
 //	public type def		begin
 type MasterPubKey struct {
-	t polyveck
+	t     polyveck
 	pkkem *kyber.PublicKey
 }
 
@@ -96,7 +97,7 @@ type KeyImage struct {
 //	to do: how to define or store PP
 //  if the contents for PP are two large, use a separate param.go to store them, otherwise, also in this file
 //	note that the sizes depend on the PP, we may need to put these constants together with PP.
-
+// TODO: What does do this function?
 func Setup() {
 	pkem = kyber.Kyber768
 }
@@ -162,12 +163,11 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 		s    polyvecl
 		tmp  poly
 		//stmp = make([]byte, PackSByteLen)
-		erro error
 	)
 
-	masterPubKey.pkkem, masterSecretViewKey.skkem, err = pkem.CryptoKemKeyPair(masterSeed)
-	if erro != nil {
-		fmt.Println(erro)
+	masterPubKey.pkkem, masterSecretViewKey.skkem,err = pkem.CryptoKemKeyPair(masterSeed)
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	s = generateLEta()
@@ -184,6 +184,31 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 	masterSecretSignKey.S = s
 
 	return masterPubKey, masterSecretViewKey, masterSecretSignKey, masterSeed, nil
+}
+func GenerateMasterKey1(mSeed []byte)(mpk *MasterPubKey,msvk *MasterSecretViewKey,mssk *MasterSecretSignKey,err error) {
+	if len(mSeed) == 0{
+		 return nil,nil,nil,errors.New("master seed is empty")
+	}
+	mpk=new(MasterPubKey)
+	msvk=new(MasterSecretViewKey)
+	mssk=new(MasterSecretSignKey)
+	mpk.pkkem, msvk.skkem, err = pkem.CryptoKemKeyPair(mSeed)
+	if err!=nil {
+		log.Fatal(err)
+	}
+	s:=generateLEta()
+	A:=expandMatA()
+	t :=new(polyveck)
+	for i:=0;i<K;i++{
+		t.vec[i]=*A[i].vec[0].Mul(&A[i].vec[0],&s.vec[0])
+		for j:=1;j<L;j++{
+			tmp:=NewPoly().Mul(&A[i].vec[j],&s.vec[j])
+			t.vec[i]=*t.vec[i].Add(&t.vec[i],tmp)
+		}
+	}
+	mpk.t=*t
+	mssk.S=s
+	return
 }
 
 func GenerateDerivedPubKey(mpk *MasterPubKey) (dpk *DerivedPubKey, err error) {
@@ -622,7 +647,7 @@ func (mpk *MasterPubKey)Serialize() ([]byte) {
 	for i = 0; i < PackTByteLen; i++ {
 		b[PKKEMByteLen+i] = sliceMpk[i]
 	}
-	tmp := make([]byte, MpkByteLen * 2)
+	tmp := make([]byte, MpkByteLen* 2)
 	for i = 0; i < MpkByteLen; i++ {
 		tbyte = b[i] >> 4
 		if tbyte < 10 {
@@ -640,11 +665,12 @@ func (mpk *MasterPubKey)Serialize() ([]byte) {
 	return tmp
 }
 
+//TODO: change to be method of MasterPubKey
 func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 	if len(mpkByteStr) == 0 {
 		return nil, errors.New("mpk byte string is empty")
 	}
-	if len(mpkByteStr) != 2 * MpkByteLen {
+	if len(mpkByteStr) != 2 *MpkByteLen {
 		return nil, errors.New("invalid mpk byte length")
 	}
 	masterPubKey := &MasterPubKey{}
@@ -760,7 +786,7 @@ func (dpk *DerivedPubKey) Serialize() []byte {
 	}
 	return tmp
 }
-
+//TODO: change to be method of DerivedPubKey
 func DeseralizeDerivedPubKey(dpkByteStr []byte) (dpk *DerivedPubKey, err error) {
 	if len(dpkByteStr) == 0 {
 		return nil, errors.New("dpk byte string is empty")
