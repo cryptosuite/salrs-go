@@ -11,9 +11,8 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	//"github.com/cryptosuite/kyber-go/kyber"
-	"github.com/lynzz1701/kyber-go/kyber"
-)
+	"localhub/kyber-go/kyber"
+	)
 
 /*
 This file contains all the public constant, type, and functions that are available to oue of the package.
@@ -64,7 +63,7 @@ var(
 
 //	public type def		begin
 type MasterPubKey struct {
-	t polyveck
+	t     polyveck
 	pkkem *kyber.PublicKey
 }
 
@@ -629,7 +628,7 @@ func (mpk *MasterPubKey)Serialize() ([]byte) {
 	for i = 0; i < PackTByteLen; i++ {
 		b[PKKEMByteLen+i] = sliceMpk[i]
 	}
-	tmp := make([]byte, MpkByteLen * 2)
+	tmp := make([]byte, MpkByteLen* 2)
 	for i = 0; i < MpkByteLen; i++ {
 		tbyte = b[i] >> 4
 		if tbyte < 10 {
@@ -647,11 +646,12 @@ func (mpk *MasterPubKey)Serialize() ([]byte) {
 	return tmp
 }
 
+//TODO: change to be method of MasterPubKey
 func DeseralizeMasterPubKey(mpkByteStr []byte) (mpk *MasterPubKey, err error) {
 	if len(mpkByteStr) == 0 {
 		return nil, errors.New("mpk byte string is empty")
 	}
-	if len(mpkByteStr) != 2 * MpkByteLen {
+	if len(mpkByteStr) != 2 *MpkByteLen {
 		return nil, errors.New("invalid mpk byte length")
 	}
 	masterPubKey := &MasterPubKey{}
@@ -718,7 +718,7 @@ func (dpk *DerivedPubKey) Serialize() []byte {
 	}
 	return tmp
 }
-
+//TODO: change to be method of DerivedPubKey
 func DeseralizeDerivedPubKey(dpkByteStr []byte) (dpk *DerivedPubKey, err error) {
 	if len(dpkByteStr) == 0 {
 		return nil, errors.New("dpk byte string is empty")
