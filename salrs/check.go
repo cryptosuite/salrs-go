@@ -26,7 +26,6 @@ func CheckTNorm(t polyveck) (flag bool) {
 	return f
 }
 
-//TODO:this function will be check for correct.
 func (t *polyveck) CheckTNorm() bool {
 	for i := 0; i < K; i++ {
 		for j := 0; j < N; j++ {
@@ -62,8 +61,7 @@ func CheckZNorm(v polyvecl) (flag bool) {
 	return f
 }
 
-//TODO:this function will be check for correct.
-func (v *polyveck) CheckZNorm() bool {
+func (v *polyvecl) CheckZNorm() bool {
 	for i := 0; i < L; i++ {
 		for j := 0; j < N; j++ {
 			if (v.vec[i].coeffs[j] > GammaMinusTwoEtaTheta) || (v.vec[i].coeffs[j] < -GammaMinusTwoEtaTheta) {
@@ -141,7 +139,6 @@ func EqualC(c1 poly, c2 poly) (flag bool) {
 	}
 	return f
 }
-//TODO:this function will be check for correct.
 func (z *poly)EqualC(p *poly) bool {
 	for i:=0;i< N;i++{
 		if z.coeffs[i] != p.coeffs[i] {
@@ -161,7 +158,6 @@ func (z *poly)EqualC(p *poly) bool {
  *
  * Returns 0/1. 1 means I1 = I2, 0 means I1 �� I2.
  **************************************************/
-//TODO: this function should to be method of polyvecm
 func EqualI(I1 polyvecm, I2 polyvecm) (flag bool) {
 	var i, j int
 	var f bool
