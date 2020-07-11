@@ -1,7 +1,5 @@
 package salrs
 
-import "fmt"
-
 /*************************************************
 * Name:        check_t_norm
 *
@@ -12,6 +10,7 @@ import "fmt"
 *
 * Returns 0/1. 1 means belonging to Rkq, 0 means not belonging to Rkq.
 **************************************************/
+
 func CheckTNorm(t polyveck) (flag bool) {
 	var i, j int
 	var f = true
@@ -25,6 +24,17 @@ func CheckTNorm(t polyveck) (flag bool) {
 	return f
 }
 
+func (t *polyveck) CheckNorm() bool {
+	for i := 0; i < K; i++ {
+		for j := 0; j < N; j++ {
+			if (t.vec[i].coeffs[j] > Q2) || (t.vec[i].coeffs[j] < -Q2) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 /*************************************************
  * Name:        check_z_norm
  *
@@ -35,18 +45,30 @@ func CheckTNorm(t polyveck) (flag bool) {
  *
  * Returns 0/1. 1 means belonging to S_L_gamma_minus_two_theta_eta, 0 means not belonging to S_L_gamma_minus_two_theta_eta.
  **************************************************/
-func CheckZNorm(z polyvecl) (flag bool) {
+func CheckZNorm(v polyvecl) (flag bool) {
 	var i, j int
 	var f = true
 	for i = 0; i < L; i++ {
 		for j = 0; j < N; j++ {
-			if (z.vec[i].coeffs[j] > GammaMinusTwoEtaTheta) || (z.vec[i].coeffs[j] < -GammaMinusTwoEtaTheta) {
-				fmt.Println(z.vec[i].coeffs[j])
+			if (v.vec[i].coeffs[j] > GammaMinusTwoEtaTheta) || (v.vec[i].coeffs[j] < -GammaMinusTwoEtaTheta) {
+				//fmt.Println(v.vec[i].coeffs[j])
 				f = false
 			}
 		}
 	}
 	return f
+}
+
+func (v *polyvecl) CheckNorm() bool {
+	for i := 0; i < L; i++ {
+		for j := 0; j < N; j++ {
+			if (v.vec[i].coeffs[j] > GammaMinusTwoEtaTheta) || (v.vec[i].coeffs[j] < -GammaMinusTwoEtaTheta) {
+				//fmt.Println(v.vec[i].coeffs[j])
+				return false
+			}
+		}
+	}
+	return true
 }
 
 /*************************************************
@@ -87,6 +109,7 @@ func CheckC(c poly) (flag bool) {
  *
  * Returns 0/1. 1 means c1 = c2, 0 means c1 �� c2.
  **************************************************/
+
 func EqualC(c1 poly, c2 poly) (flag bool) {
 	var i int
 	var f = true
@@ -121,6 +144,14 @@ func EqualI(I1 polyvecm, I2 polyvecm) (flag bool) {
 	}
 	return f
 }
+func (v *polyvecm)Equal(p *polyvecm) bool {
+	for i:=0;i<M;i++{
+		if !v.vec[i].Equal(&p.vec[i]) {
+			return false
+		}
+	}
+	return true
+}
 
 func Equaldpk(dpk1 DerivedPubKey, dpk2 DerivedPubKey) (flag bool) {
 	var i, j, ii int
@@ -143,4 +174,15 @@ func Equaldpk(dpk1 DerivedPubKey, dpk2 DerivedPubKey) (flag bool) {
 		}
 	}
 	return f
+}
+func (dpk *DerivedPubKey) Equal(k *DerivedPubKey) bool{
+	if !dpk.t.Equal(&k.t)|| len(dpk.c) != len(k.c){
+		return false
+	}
+	for i:=0;i<len(dpk.c);i++{
+		if dpk.c[i]!=k.c[i] {
+			return false
+		}
+	}
+	return true
 }

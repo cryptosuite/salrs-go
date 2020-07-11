@@ -12,6 +12,26 @@ import "errors"
 * Arguments:    - polyveck *t: pointer to input vector t
 *              - unsigned char *t_char: pointer to output array
 **************************************************/
+func (t *polyveck) packQ() []byte {
+	var tmp [2]int64
+	res := make([]byte, PackTByteLen)
+	for i := 0; i < K; i++ {
+		for j := 0; i < 1228; j++ {
+			tmp[0] = t.vec[i].coeffs[2*j] + Q2
+			tmp[1] = t.vec[i].coeffs[2*j+1] + Q2
+			res[i*128*9+9*j+0] = byte(tmp[0])
+			res[i*128*9+9*j+1] = byte(tmp[0] >> 8)
+			res[i*128*9+9*j+2] = byte(tmp[0] >> 16)
+			res[i*128*9+9*j+3] = byte(tmp[0] >> 24)
+			res[i*128*9+9*j+4] = byte(tmp[0]>>32) | byte(tmp[1]<<4)
+			res[i*128*9+9*j+5] = byte(tmp[1] >> 4)
+			res[i*128*9+9*j+6] = byte(tmp[1] >> 12)
+			res[i*128*9+9*j+7] = byte(tmp[1] >> 20)
+			res[i*128*9+9*j+8] = byte(tmp[1] >> 28)
+		}
+	}
+	return res
+}
 func packPolyveckQ(t polyveck) (tchar []byte) {
 	var i, j int
 	var tmp [2]int64
@@ -42,6 +62,27 @@ func packPolyveckQ(t polyveck) (tchar []byte) {
  * Arguments:   - unsigned char *t_char: pointer to input array
  *              - polyveck *t: pointer to output vector t
  **************************************************/
+func (t *polyveck) unpackQ(tchar []byte) {
+	var i, j int
+	var tmp [2]int64
+	for i = 0; i < K; i++ {
+		for j = 0; j < 128; j++ {
+			tmp[0] = int64(tchar[i*128*9+9*j+0])
+			tmp[0] |= (int64(tchar[i*128*9+9*j+1])) << 8
+			tmp[0] |= (int64(tchar[i*128*9+9*j+2])) << 16
+			tmp[0] |= (int64(tchar[i*128*9+9*j+3])) << 24
+			tmp[0] |= ((int64(tchar[i*128*9+9*j+4])) << 32) & (0xFFFFFFFFF)
+			tmp[1] = (int64(tchar[i*128*9+9*j+4])) >> 4
+			tmp[1] |= (int64(tchar[i*128*9+9*j+5])) << 4
+			tmp[1] |= (int64(tchar[i*128*9+9*j+6])) << 12
+			tmp[1] |= (int64(tchar[i*128*9+9*j+7])) << 20
+			tmp[1] |= ((int64(tchar[i*128*9+9*j+8])) << 28) & (0xFFFFFFFFF)
+
+			t.vec[i].coeffs[2*j] = tmp[0] - Q2
+			t.vec[i].coeffs[2*j+1] = tmp[1] - Q2
+		}
+	}
+}
 func unpackPolyveckQ(tchar []byte) (t polyveck) {
 	var i, j int
 	var tmp [2]int64
@@ -74,6 +115,28 @@ func unpackPolyveckQ(tchar []byte) (t polyveck) {
  * Arguments:    - polyvecl *s: pointer to input vector s
  *              - unsigned char *s_char: pointer to output array
  **************************************************/
+func (s *polyvecl) packEta() []byte {
+	var i, j int
+	var tmp [8]int64
+	res := make([]byte, PackSByteLen)
+	for i = 0; i < L; i++ {
+		for j = 0; j < 32; j++ {
+			tmp[0] = s.vec[i].coeffs[8*j+0] + Eta
+			tmp[1] = s.vec[i].coeffs[8*j+1] + Eta
+			tmp[2] = s.vec[i].coeffs[8*j+2] + Eta
+			tmp[3] = s.vec[i].coeffs[8*j+3] + Eta
+			tmp[4] = s.vec[i].coeffs[8*j+4] + Eta
+			tmp[5] = s.vec[i].coeffs[8*j+5] + Eta
+			tmp[6] = s.vec[i].coeffs[8*j+6] + Eta
+			tmp[7] = s.vec[i].coeffs[8*j+7] + Eta
+
+			res[i*32*3+j*3+0] = byte(tmp[0]) + byte(tmp[1]<<3) + byte(tmp[2]<<6)
+			res[i*32*3+j*3+1] = byte(tmp[2]>>2) + byte(tmp[3]<<1) + byte(tmp[4]<<4) + byte(tmp[5]<<7)
+			res[i*32*3+j*3+2] = byte(tmp[5]>>1) + byte(tmp[6]<<2) + byte(tmp[7]<<5)
+		}
+	}
+	return res
+}
 func packPolyveclEta(s polyvecl) (schar []byte) {
 	var i, j int
 	var tmp [8]int64
@@ -105,6 +168,31 @@ func packPolyveclEta(s polyvecl) (schar []byte) {
  * Arguments:   - unsigned char *s_char: pointer to input array
  *              - polyvecl *s: pointer to output vector s
  **************************************************/
+func (s *polyvecl) unpackEta(schar []byte) {
+	var i, j int
+	var tmp [8]int64
+	for i = 0; i < L; i++ {
+		for j = 0; j < 32; j++ {
+			tmp[0] = int64(schar[i*32*3+j*3+0] & 0x7)
+			tmp[1] = int64(schar[i*32*3+j*3+0]) >> 3 & 0x7
+			tmp[2] = (int64(schar[i*32*3+j*3+0]) >> 6 & 0x3) | (int64(schar[i*32*3+j*3+1]) << 2 & 0x4)
+			tmp[3] = int64(schar[i*32*3+j*3+1]) >> 1 & 0x7
+			tmp[4] = int64(schar[i*32*3+j*3+1]) >> 4 & 0x7
+			tmp[5] = (int64(schar[i*32*3+j*3+1]) >> 7 & 0x1) | (int64(schar[i*32*3+j*3+2]) << 1 & 0x6)
+			tmp[6] = int64(schar[i*32*3+j*3+2]) >> 2 & 0x7
+			tmp[7] = int64(schar[i*32*3+j*3+2]) >> 5 & 0x7
+
+			s.vec[i].coeffs[8*j+0] = tmp[0] - Eta
+			s.vec[i].coeffs[8*j+1] = tmp[1] - Eta
+			s.vec[i].coeffs[8*j+2] = tmp[2] - Eta
+			s.vec[i].coeffs[8*j+3] = tmp[3] - Eta
+			s.vec[i].coeffs[8*j+4] = tmp[4] - Eta
+			s.vec[i].coeffs[8*j+5] = tmp[5] - Eta
+			s.vec[i].coeffs[8*j+6] = tmp[6] - Eta
+			s.vec[i].coeffs[8*j+7] = tmp[7] - Eta
+		}
+	}
+}
 func unpackPolyveclEta(schar []byte) (s polyvecl) {
 	var i, j int
 	var tmp [8]int64
@@ -141,6 +229,31 @@ func unpackPolyveclEta(schar []byte) (s polyvecl) {
  * Arguments:   - polyvecl *z: pointer to input vector z
  *             - unsigned char *z_char: pointer to output array
  **************************************************/
+func (z *polyvecl) packGmte() []byte {
+	var i, j int
+	var tmp [4]int64
+	res := make([]byte, PackZByteLen)
+	for i = 0; i < L; i++ {
+		for j = 0; j < 64; j++ {
+			tmp[0] = z.vec[i].coeffs[4*j+0] + GammaMinusTwoEtaTheta
+			tmp[1] = z.vec[i].coeffs[4*j+1] + GammaMinusTwoEtaTheta
+			tmp[2] = z.vec[i].coeffs[4*j+2] + GammaMinusTwoEtaTheta
+			tmp[3] = z.vec[i].coeffs[4*j+3] + GammaMinusTwoEtaTheta
+			res[i*64*11+11*j+0] = byte(tmp[0])
+			res[i*64*11+11*j+1] = byte(tmp[0] >> 8)
+			res[i*64*11+11*j+2] = (byte(tmp[0] >> 16)) | (byte(tmp[1] << 6))
+			res[i*64*11+11*j+3] = byte(tmp[1] >> 2)
+			res[i*64*11+11*j+4] = byte(tmp[1] >> 10)
+			res[i*64*11+11*j+5] = (byte(tmp[1] >> 18)) | (byte(tmp[2] << 4))
+			res[i*64*11+11*j+6] = byte(tmp[2] >> 4)
+			res[i*64*11+11*j+7] = byte(tmp[2] >> 12)
+			res[i*64*11+11*j+8] = (byte(tmp[2] >> 20)) | (byte(tmp[3] << 2))
+			res[i*64*11+11*j+9] = byte(tmp[3] >> 6)
+			res[i*64*11+11*j+10] = byte(tmp[3] >> 14)
+		}
+	}
+	return res
+}
 func packPolyveclGmte(z polyvecl) (zchar []byte) {
 	var i, j int
 	var tmp [4]int64
@@ -175,6 +288,32 @@ func packPolyveclGmte(z polyvecl) (zchar []byte) {
  * Arguments:   - unsigned char *z_char: pointer to input array
  *              - polyvecl *z: pointer to output vector z
  **************************************************/
+func (z *polyvecl) unpackGmte(zchar []byte) {
+	var i, j int
+	var tmp [4]int64
+	for i = 0; i < L; i++ {
+		for j = 0; j < 64; j++ {
+			tmp[0] = int64(zchar[i*64*11+11*j+0])
+			tmp[0] |= (int64(zchar[i*64*11+11*j+1])) << 8
+			tmp[0] |= ((int64(zchar[i*64*11+11*j+2])) << 16) & (0x3FFFFF)
+			tmp[1] = (int64(zchar[i*64*11+11*j+2])) >> 6
+			tmp[1] |= (int64(zchar[i*64*11+11*j+3])) << 2
+			tmp[1] |= (int64(zchar[i*64*11+11*j+4])) << 10
+			tmp[1] |= (int64(zchar[i*64*11+11*j+5]) << 18) & (0x3FFFFF)
+			tmp[2] = int64(zchar[i*64*11+11*j+5]) >> 4
+			tmp[2] |= int64(zchar[i*64*11+11*j+6]) << 4
+			tmp[2] |= int64(zchar[i*64*11+11*j+7]) << 12
+			tmp[2] |= (int64(zchar[i*64*11+11*j+8]) << 20) & (0x3FFFFF)
+			tmp[3] = int64(zchar[i*64*11+11*j+8]) >> 2
+			tmp[3] |= int64(zchar[i*64*11+11*j+9]) << 6
+			tmp[3] |= (int64(zchar[i*64*11+11*j+10]) << 14) & (0x3FFFFF)
+			z.vec[i].coeffs[4*j+0] = tmp[0] - GammaMinusTwoEtaTheta
+			z.vec[i].coeffs[4*j+1] = tmp[1] - GammaMinusTwoEtaTheta
+			z.vec[i].coeffs[4*j+2] = tmp[2] - GammaMinusTwoEtaTheta
+			z.vec[i].coeffs[4*j+3] = tmp[3] - GammaMinusTwoEtaTheta
+		}
+	}
+}
 func unpackPolyveclGmte(zchar []byte) (z polyvecl) {
 	var i, j int
 	var tmp [4]int64
@@ -212,6 +351,27 @@ func unpackPolyveclGmte(zchar []byte) (z polyvecl) {
  * Arguments:  - polyvecm *m: pointer to input vector m
  *            - unsigned char *m_char: pointer to output array
  **************************************************/
+func (m *polyvecm) packQ() []byte {
+	var ii, j int
+	var tmp [2]int64
+	res := make([]byte, PackIByteLen)
+	for ii = 0; ii < M; ii++ {
+		for j = 0; j < 128; j++ {
+			tmp[0] = m.vec[ii].coeffs[2*j] + Q2
+			tmp[1] = m.vec[ii].coeffs[2*j+1] + Q2
+			res[ii*128*9+9*j+0] = byte(tmp[0])
+			res[ii*128*9+9*j+1] = byte(tmp[0] >> 8)
+			res[ii*128*9+9*j+2] = byte(tmp[0] >> 16)
+			res[ii*128*9+9*j+3] = byte(tmp[0] >> 24)
+			res[ii*128*9+9*j+4] = (byte(tmp[0] >> 32)) | (byte(tmp[1] << 4))
+			res[ii*128*9+9*j+5] = byte(tmp[1] >> 4)
+			res[ii*128*9+9*j+6] = byte(tmp[1] >> 12)
+			res[ii*128*9+9*j+7] = byte(tmp[1] >> 20)
+			res[ii*128*9+9*j+8] = byte(tmp[1] >> 28)
+		}
+	}
+	return res
+}
 func packPolyvecmQ(m polyvecm) (mChar []byte) {
 	var ii, j int
 	var tmp [2]int64
@@ -242,6 +402,27 @@ func packPolyvecmQ(m polyvecm) (mChar []byte) {
  * Arguments:   - unsigned char *m_char: pointer to input array
  *              - polyvecm *m: pointer to output vector m
  **************************************************/
+func (m *polyvecm) unpackQ(mChar []byte) {
+	var ii, j int
+	var tmp [2]int64
+	for ii = 0; ii < M; ii++ {
+		for j = 0; j < 128; j++ {
+			tmp[0] = int64(mChar[ii*128*9+9*j+0])
+			tmp[0] |= int64(mChar[ii*128*9+9*j+1]) << 8
+			tmp[0] |= int64(mChar[ii*128*9+9*j+2]) << 16
+			tmp[0] |= int64(mChar[ii*128*9+9*j+3]) << 24
+			tmp[0] |= (int64(mChar[ii*128*9+9*j+4]) << 32) & (0xFFFFFFFFF)
+			tmp[1] = int64(mChar[ii*128*9+9*j+4]) >> 4
+			tmp[1] |= int64(mChar[ii*128*9+9*j+5]) << 4
+			tmp[1] |= int64(mChar[ii*128*9+9*j+6]) << 12
+			tmp[1] |= int64(mChar[ii*128*9+9*j+7]) << 20
+			tmp[1] |= (int64(mChar[ii*128*9+9*j+8]) << 28) & (0xFFFFFFFFF)
+
+			m.vec[ii].coeffs[2*j] = tmp[0] - Q2
+			m.vec[ii].coeffs[2*j+1] = tmp[1] - Q2
+		}
+	}
+}
 func unpackPolyvecmQ(mChar []byte) (m polyvecm) {
 	var ii, j int
 	var tmp [2]int64
@@ -335,7 +516,6 @@ func unpackPolyvecmQ(mChar []byte) (m polyvecm) {
   	}
   }
   **/
-
 
 /*************************************************
  * Name:        pack_mpk
@@ -452,6 +632,20 @@ func unpackMsk(msk []byte) (skkem []byte, s polyvecl) {
  *              - polyveck *t: pointer to input vector t
  *              - unsigned char *dpk: pointer to output array dpk
  **************************************************/
+func (dpk *DerivedPubKey) pack() []byte {
+	var i int
+	res := make([]byte, DpkByteLen)
+	for i = 0; i < CipherByteLen; i++ { //cipher string
+		res[i] = dpk.c[i]
+	}
+	//dpk += SIZE_CIPHER
+	sliceDpk := make([]byte, PackTByteLen)
+	sliceDpk = packPolyveckQ(dpk.t)
+	for i = 0; i < PackTByteLen; i++ {
+		res[CipherByteLen+i] = sliceDpk[i]
+	}
+	return res
+}
 func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
 	var i int
 	dpkk := make([]byte, DpkByteLen)
@@ -476,6 +670,19 @@ func packDpk(derivedpk DerivedPubKey) (dpk []byte) {
  *             - unsigned char *c: point to output C in kem
  *              - polyveck *t: pointer to output vector t
  **************************************************/
+func (dpk *DerivedPubKey) unpack(dpkPkg []byte) {
+	var i int
+	for i = 0; i < CipherByteLen; i++ {
+		dpk.c[i] = dpkPkg[i]
+	}
+	//dpkPkg += SIZE_CIPHER
+	sliceDpk := make([]byte, PackTByteLen)
+	for i = 0; i < PackTByteLen; i++ {
+		sliceDpk[i] = dpkPkg[CipherByteLen+i]
+	}
+	dpk.t = unpackPolyveckQ(sliceDpk)
+
+}
 func unpackDpk(dpk []byte) (derivedpk DerivedPubKey) {
 	var i int
 	derivedpkk := DerivedPubKey{}
@@ -501,6 +708,54 @@ func unpackDpk(dpk []byte) (derivedpk DerivedPubKey) {
  *              - polyvecm* i: pointer to input i
  *              - unsigned char *sig: pointer to output array sig
  **************************************************/
+func (sig *Signature) pack() []byte {
+	var i2, j int
+	var signs, mask, ii int64
+	var res = make([]byte, sig.r*PackZByteLen+PackIByteLen+N/8+8)
+
+	/* Encode z*/
+	//printf("encode z\n")
+
+	slicez := make([]byte, PackZByteLen)
+	for i2 = 0; i2 < sig.r; i2++ {
+		slicez = packPolyveclGmte(sig.z[i2])
+		for j = 0; j < PackZByteLen; j++ {
+			res[i2*PackZByteLen+j] = slicez[j]
+		}
+	}
+
+	/* Encode I*/
+	//printf("encode I\n")
+	sliceI := make([]byte, PackIByteLen)
+	//var sliceI = sig[r * PackZByteLen:r * PackZByteLen + PackIByteLen]
+	sliceI = packPolyvecmQ(sig.I)
+	for i2 = 0; i2 < PackIByteLen; i2++ {
+		res[sig.r*PackZByteLen+i2] = sliceI[i2]
+	}
+
+	/* Encode c */
+	signs = 0
+	mask = 1
+	for i2 = 0; i2 < N/8; i2++ {
+		res[sig.r*PackZByteLen+PackIByteLen+i2] = 0
+		for j = 0; j < 8; j++ {
+			if sig.c.coeffs[8*i2+j] != 0 {
+				res[sig.r*PackZByteLen+PackIByteLen+i2] |= byte(uint32(1) << j)
+				if sig.c.coeffs[8*i2+j] == (Q - 1) {
+					signs |= mask
+				}
+				mask <<= 1
+			}
+		}
+	}
+	//sig += N / 8
+
+	for ii = 0; ii < 8; ii++ {
+		i2 = int(ii)
+		res[sig.r*PackZByteLen+PackIByteLen+N/8+i2] = byte(signs >> (8 * ii))
+	}
+	return res
+}
 func packSig(sig Signature) (signature []byte) {
 	var i2, j int
 	var signs, mask, ii int64
@@ -561,6 +816,60 @@ func packSig(sig Signature) (signature []byte) {
  *              - polyvecm* i: pointer to output i
  **************************************************/
 //func unpackSig(sig []byte, r uint32)(c poly,  i polyvecm, err error)
+func (sig *Signature) unpack(signa []byte) ( err error) {
+	var ii, j int
+	var signs, i2 int64
+
+	//calculate r
+	var length int
+	length = len(signa)
+	var ring int
+	ring = (length - (PackIByteLen + N/8 + 8)) / PackZByteLen
+	sig.r = ring
+
+	/* Decode z*/
+	var zz = make([]polyvecl, sig.r)
+	slicez := make([]byte, PackZByteLen)
+	for ii = 0; ii < sig.r; ii++ {
+		for j = 0; j < PackZByteLen; j++ {
+			slicez[j] = signa[ii*PackZByteLen+j]
+			zz[j] = unpackPolyveclGmte(slicez)
+		}
+	}
+	sig.z = zz
+
+	/* Decode I */
+	sliceI := make([]byte, PackIByteLen)
+	for ii = 0; ii < PackIByteLen; ii++ {
+		sliceI[ii] = signa[ii+sig.r*PackZByteLen]
+	}
+	sig.I = unpackPolyvecmQ(sliceI)
+
+	/* Decode c */
+	for ii = 0; ii < N; ii++ {
+		sig.c.coeffs[ii] = 0
+	}
+
+	signs = 0
+	for i2 = 0; i2 < 8; i2++ {
+		signs |= int64(signa[sig.r*PackZByteLen+PackIByteLen+N/8+int(i2)]) << 8 * i2
+	}
+	/* Extra sign bits are zero for strong unforgeability */
+	if signs>>60 != 0 {
+		return  errors.New("sig unpack failed")
+	}
+
+	for ii = 0; ii < N/8; ii++ {
+		for j = 0; j < 8; j++ {
+			if (signa[sig.r*PackZByteLen+PackIByteLen+ii]>>j)&0x01 == 1 {
+				sig.c.coeffs[8*ii+j] = 1
+				sig.c.coeffs[8*ii+j] ^= -(signs & 1) & (1 ^ (Q - 1))
+				signs >>= 1
+			}
+		}
+	}
+	return nil
+}
 func unpackSig(signa []byte) (sig Signature, err error) {
 	var ii, j int
 	var signs, i2 int64

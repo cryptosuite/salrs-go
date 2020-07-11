@@ -3,7 +3,7 @@ package salrs
 import (
 	"golang.org/x/crypto/sha3"
 )
-
+// TODO:lack of handling error
 /*************************************************
 * Name:        rej_uniform
 *
