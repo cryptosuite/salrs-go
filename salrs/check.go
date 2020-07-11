@@ -1,5 +1,6 @@
 package salrs
 
+
 /*************************************************
 * Name:        check_t_norm
 *
@@ -23,6 +24,7 @@ func CheckTNorm(t polyveck) (flag bool) {
 	}
 	return f
 }
+
 
 func (t *polyveck) CheckNorm() bool {
 	for i := 0; i < K; i++ {
@@ -81,6 +83,7 @@ func (v *polyvecl) CheckNorm() bool {
  *
  * Returns 0/1. 1 means belonging to B��, 0 means not belonging to B��.
  **************************************************/
+// TODO: this function had been a method of poly, but maybe has some logic error
 func CheckC(c poly) (flag bool) {
 	var count, i = 0, 0
 	var f = true
@@ -97,6 +100,22 @@ func CheckC(c poly) (flag bool) {
 		f = false
 	}
 	return f
+}
+func (z *poly) CheckC() (flag bool) {
+	count := 0
+	flag = true
+	for i := 0; i < N; i++ {
+		if (z.coeffs[i] == 1) || (z.coeffs[i] == -1) {
+			count++
+		} else if z.coeffs[i] != 0 {
+			return false
+		}
+	}
+	if count == 60 {
+		return true
+	} else {
+		return false
+	}
 }
 
 /*************************************************
@@ -119,6 +138,14 @@ func EqualC(c1 poly, c2 poly) (flag bool) {
 		}
 	}
 	return f
+}
+func (z *poly)EqualC(p *poly) bool {
+	for i:=0;i< N;i++{
+		if z.coeffs[i] != p.coeffs[i] {
+			return false
+		}
+	}
+	return true
 }
 
 /*************************************************
@@ -144,6 +171,7 @@ func EqualI(I1 polyvecm, I2 polyvecm) (flag bool) {
 	}
 	return f
 }
+
 func (v *polyvecm)Equal(p *polyvecm) bool {
 	for i:=0;i<M;i++{
 		if !v.vec[i].Equal(&p.vec[i]) {
@@ -153,6 +181,8 @@ func (v *polyvecm)Equal(p *polyvecm) bool {
 	return true
 }
 
+/* TODO: whether here are some error about how to make a decision about two  polyveck equals
+   and there should a method of polyveck which can judge two polyveck is equal  */
 func Equaldpk(dpk1 DerivedPubKey, dpk2 DerivedPubKey) (flag bool) {
 	var i, j, ii int
 	var f bool
@@ -175,6 +205,7 @@ func Equaldpk(dpk1 DerivedPubKey, dpk2 DerivedPubKey) (flag bool) {
 	}
 	return f
 }
+
 func (dpk *DerivedPubKey) Equal(k *DerivedPubKey) bool{
 	if !dpk.t.Equal(&k.t)|| len(dpk.c) != len(k.c){
 		return false

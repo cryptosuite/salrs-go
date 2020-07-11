@@ -805,6 +805,7 @@ func NewPoly() (res *poly) {
 	return res
 }
 
+
 func (z *poly) Equal(a *poly) bool {
 	for i := 0; i < N; i++ {
 		if z.coeffs[i] != a.coeffs[i] {
