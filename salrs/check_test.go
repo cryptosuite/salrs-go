@@ -79,7 +79,7 @@ func TestEqualI(t *testing.T) {
 
 }
 func TestEqualdpk(t *testing.T) {
-	mpk, _, _, err := GenerateMasterKey([]byte{97, 98, 99,})
+	mpk, _, _, _,err := GenerateMasterKey([]byte{97, 98, 99,})
 	if err!=nil {
 		log.Fatal(err)
 	}

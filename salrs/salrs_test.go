@@ -8,7 +8,7 @@ import (
 )
 
 func TestDeseralizeMasterPubKey(t *testing.T) {
-	mpk, _, _, err := GenerateMasterKey([]byte{97, 98, 99})
+	mpk, _, _, _, err := GenerateMasterKey([]byte{97, 98, 99})
 	if err!=nil {
 		log.Fatal(err)
 	}
@@ -30,10 +30,11 @@ func TestDeseralizeMasterPubKey(t *testing.T) {
 
 }
 func TestDeseralizeDerivedPubKey(t *testing.T) {
-	mpk, _, _, err := GenerateMasterKey([]byte{97, 98, 99})
+	mpk, _, mssk, _,err := GenerateMasterKey([]byte{97, 98, 99})
 	if err!=nil {
 		log.Fatal(err)
 	}
+	fmt.Println("length of mssk",mssk.Serialize())
 	dpk, err := GenerateDerivedPubKey(mpk)
 	bytes := dpk.Serialize()
 	want:=true
