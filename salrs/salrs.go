@@ -13,6 +13,7 @@ This file contains all the public constant, type, and functions that are availab
 
 //	public const def	begin
 const PassPhaseByteLen = 32
+
 // TODO: This value should be a const value?
 var pkem = kyber.Kyber768
 
@@ -35,21 +36,24 @@ const (
 	R6                    = -3077095668
 	R7                    = 14301820476
 
-	PackTByteLen = 3456
-	PackSByteLen = 480
-	PackZByteLen = 3520
-	PackIByteLen = 1152
-	cstr     = "today_is_a_good_day_today_is_a_good_day_today_is_a_good_day"     //TODO:this const string should be random?
-	CSTRSIZE = len(cstr)
+	PackTByteLen = 3456                                                          //
+	PackSByteLen = 480                                                           //
+	PackZByteLen = 3520                                                          //
+	PackIByteLen = 1152                                                          //
+	cstr         = "today_is_a_good_day_today_is_a_good_day_today_is_a_good_day" //TODO:this const string should be random?
+	CSTRSIZE     = len(cstr)
 )
 
-var(
-	MpkByteLen    = pkem.CryptoPublicKeyBytes() + PackTByteLen
+var (
 	PKKEMByteLen  = pkem.CryptoPublicKeyBytes()
-	MskByteLen    = pkem.CryptoSecretKeyBytes() + PackSByteLen
 	SKKEMByteLen  = pkem.CryptoSecretKeyBytes()
-	DpkByteLen    = pkem.CryptoCiphertextBytes() + PackTByteLen
-	CipherByteLen = pkem.CryptoCiphertextBytes()
+	CTKEMByteLen  = pkem.CryptoCiphertextBytes()
+	MpkByteLen    = PKKEMByteLen + PackTByteLen
+	MskByteLen    = MsvkByteLen + MsskByteLen
+	MsvkByteLen   = SKKEMByteLen
+	MsskByteLen   = PackSByteLen
+	DpkByteLen    = CTKEMByteLen + PackTByteLen
+	CipherByteLen = CTKEMByteLen
 )
 
 //	public const def	end=1000
@@ -121,7 +125,7 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 		//stmp = make([]byte, PackSByteLen)
 	)
 
-	masterPubKey.pkkem, masterSecretViewKey.skkem,err = pkem.CryptoKemKeyPair(masterSeed)
+	masterPubKey.pkkem, masterSecretViewKey.skkem, err = pkem.CryptoKemKeyPair(masterSeed)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -141,29 +145,29 @@ func GenerateMasterKey(masterSeed []byte) (mpk *MasterPubKey, msvk *MasterSecret
 
 	return masterPubKey, masterSecretViewKey, masterSecretSignKey, masterSeed, nil
 }
-func GenerateMasterKey1(mSeed []byte)(mpk *MasterPubKey,msvk *MasterSecretViewKey,mssk *MasterSecretSignKey,err error) {
-	if len(mSeed) == 0{
-		 return nil,nil,nil,errors.New("master seed is empty")
+func GenerateMasterKey1(mSeed []byte) (mpk *MasterPubKey, msvk *MasterSecretViewKey, mssk *MasterSecretSignKey, err error) {
+	if len(mSeed) == 0 {
+		return nil, nil, nil, errors.New("master seed is empty")
 	}
-	mpk=new(MasterPubKey)
-	msvk=new(MasterSecretViewKey)
-	mssk=new(MasterSecretSignKey)
+	mpk = new(MasterPubKey)
+	msvk = new(MasterSecretViewKey)
+	mssk = new(MasterSecretSignKey)
 	mpk.pkkem, msvk.skkem, err = pkem.CryptoKemKeyPair(mSeed)
-	if err!=nil {
+	if err != nil {
 		log.Fatal(err)
 	}
-	s:=generateLEta()
-	A:=expandMatA()
-	t :=new(polyveck)
-	for i:=0;i<K;i++{
-		t.vec[i]=*NewPoly().Mul(&A[i].vec[0],&s.vec[0])
-		for j:=1;j<L;j++{
-			tmp:=NewPoly().Mul(&A[i].vec[j],&s.vec[j])
-			t.vec[i]=*NewPoly().Add(&t.vec[i],tmp)
+	s := generateLEta()
+	A := expandMatA()
+	t := new(polyveck)
+	for i := 0; i < K; i++ {
+		t.vec[i] = *NewPoly().Mul(&A[i].vec[0], &s.vec[0])
+		for j := 1; j < L; j++ {
+			tmp := NewPoly().Mul(&A[i].vec[j], &s.vec[j])
+			t.vec[i] = *NewPoly().Add(&t.vec[i], tmp)
 		}
 	}
-	mpk.t=*t
-	mssk.S=s
+	mpk.t = *t
+	mssk.S = s
 	return
 }
 
@@ -650,7 +654,7 @@ func Sign1(msg []byte, dpkRing *DpkRing, dpk *DerivedPubKey, mpk *MasterPubKey, 
 				az.vec[i] = *NewPoly().Mul(&A[i].vec[0], &z.vec[0])
 				for j = 1; j < L; j++ {
 					tmp = *NewPoly().Mul(&A[i].vec[j], &z.vec[j])
-					az.vec[i] = *NewPoly().Add(&az.vec[i],&tmp)
+					az.vec[i] = *NewPoly().Add(&az.vec[i], &tmp)
 				}
 			}
 
@@ -888,7 +892,7 @@ func Verify1(msg []byte, dpkRing *DpkRing, sig *Signature) (keyImage *KeyImage, 
 			w.vec[i] = *NewPoly().Add(&az.vec[i], &cti.vec[i])
 		}
 		for i = 0; i < M; i++ {
-			hz.vec[i] = *NewPoly().Mul(&H[i].vec[0],&z.vec[0])
+			hz.vec[i] = *NewPoly().Mul(&H[i].vec[0], &z.vec[0])
 			for j = 1; j < L; j++ {
 				tmp = *NewPoly().Mul(&H[i].vec[j], &z.vec[j])
 				hz.vec[i] = *NewPoly().Add(&hz.vec[i], &tmp)
@@ -1006,7 +1010,7 @@ func Link1(msg1 []byte, dpkRing1 *DpkRing, sig1 *Signature, msg2 []byte, dpkRing
 	return I1.Equal(&I2)
 }
 
-func (mpk *MasterPubKey)Serialize() ([]byte) {
+func (mpk *MasterPubKey) Serialize() []byte {
 	b := make([]byte, MpkByteLen)
 	var i int
 	for i = 0; i < PKKEMByteLen; i++ {
@@ -1028,11 +1032,11 @@ func DeseralizeMasterPubKey(b []byte) (mpk *MasterPubKey, err error) {
 		return nil, errors.New("invalid mpk byte length")
 	}
 	mpk = &MasterPubKey{}
-	mpk.pkkem,err=pkem.PublicKeyFromBytes(b[:PKKEMByteLen])
-	if err != nil{
+	mpk.pkkem, err = pkem.PublicKeyFromBytes(b[:PKKEMByteLen])
+	if err != nil {
 		return nil, errors.New("pubkey from byte failed")
 	}
-	mpk.t=unpackPolyveckQ(b[PKKEMByteLen:])
+	mpk.t = unpackPolyveckQ(b[PKKEMByteLen:])
 	return mpk, nil
 }
 
@@ -1040,7 +1044,7 @@ func SerializeMseed(mseed []byte) []byte {
 	var i, length int
 	var tbyte byte
 	length = len(mseed)
-	b := make([]byte, length * 2)
+	b := make([]byte, length*2)
 	for i = 0; i < length; i++ {
 		tbyte = mseed[i] >> 4
 		if tbyte < 10 {
@@ -1062,7 +1066,7 @@ func DeseralizeMseed(mseed []byte) (mpk []byte, err error) {
 	if len(mseed) == 0 {
 		return nil, errors.New("mastermseed is empty")
 	}
-	if len(mseed) % 2 != 0{
+	if len(mseed)%2 != 0 {
 		return nil, errors.New("invalid mastermseed")
 	}
 	var i, length int
@@ -1103,10 +1107,36 @@ func DeseralizeDerivedPubKey(b []byte) (dpk *DerivedPubKey, err error) {
 		return nil, errors.New("dpk byte string is empty")
 	}
 	dpk = &DerivedPubKey{}
-	dpk.c=make([]byte,CipherByteLen)
+	dpk.c = make([]byte, CipherByteLen)
 	for i := 0; i < CipherByteLen; i++ {
 		dpk.c[i] = b[i]
 	}
 	dpk.t = unpackPolyveckQ(b[CipherByteLen:])
 	return dpk, nil
+}
+func (msvk *MasterSecretViewKey) Serialize() []byte {
+	return msvk.skkem.Bytes()
+}
+
+func DeseralizeMasterSecretViewKey(b []byte) (msvk *MasterSecretViewKey, err error) {
+	if len(b) == 0 {
+		return nil, errors.New("msvk byte string is empty")
+	}
+	msvk = &MasterSecretViewKey{}
+	msvk.skkem, err = pkem.SecretKeyFromBytes(b)
+	if err != nil {
+		return nil, fmt.Errorf("msvk deserialize error")
+	}
+	return
+}
+func (mssk *MasterSecretSignKey) Serialize() []byte {
+	b := make([]byte,MsskByteLen)
+	b = mssk.S.packEta()
+	return b
+}
+// TODO: lack handling error
+func DeseralizeMasterSecretSignKey(b []byte) (mssk *MasterSecretSignKey, err error) {
+	mssk=new(MasterSecretSignKey)
+	mssk.S = unpackPolyveclEta(b)
+	return mssk, nil
 }
