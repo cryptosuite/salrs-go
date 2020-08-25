@@ -1202,5 +1202,12 @@ func DeserializeSignature(b []byte) (*Signature, error) {
 		//offset+=1
 	}
 	return res, nil
-
+}
+func (k *KeyImage)Serialize()[]byte{
+	return k.I.packQ()
+}
+func Deserialize(b []byte)(*KeyImage,error){
+	res:=new(KeyImage)
+	res.I=unpackPolyvecmQ(b)
+	return res,nil
 }
