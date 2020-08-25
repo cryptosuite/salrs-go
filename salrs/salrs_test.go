@@ -121,6 +121,29 @@ func TestMFunction(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	//if !bytes2.Equal(sign.Serialize(),sign.pack()){
+	//	t.Error("serialize signature work wrongly")
+	//}
+	//cs,err:=DeserializeSignature(sign.Serialize())
+	cs,err:=DeserializeSignature(sign.Serialize())
+	if err!=nil{
+		t.Error("deserialize signature work wrongly")
+	}
+	if cs.r!=sign.r {
+		t.Error("deserialize signature work wrongly")
+	}
+	if !cs.I.Equal(&sign.I){
+		t.Error("deserialize signature work wrongly")
+	}
+	for i:=0;i<cs.r;i++{
+		if !cs.z[i].Equal(&sign.z[i]){
+			t.Error("deserialize signature work wrongly")
+		}
+	}
+	if !cs.c.Equal(&sign.c){
+		t.Error("deserialize signature work wrongly")
+	}
+
 	if !Link1(msg, Ring, sign, msg, Ring, sign2) {
 		fmt.Println("no matter")
 	}

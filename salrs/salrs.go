@@ -1,6 +1,7 @@
 package salrs
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/cryptosuite/kyber-go/kyber"
@@ -1130,13 +1131,76 @@ func DeseralizeMasterSecretViewKey(b []byte) (msvk *MasterSecretViewKey, err err
 	return
 }
 func (mssk *MasterSecretSignKey) Serialize() []byte {
-	b := make([]byte,MsskByteLen)
+	b := make([]byte, MsskByteLen)
 	b = mssk.S.packEta()
 	return b
 }
+
 // TODO: lack handling error
 func DeseralizeMasterSecretSignKey(b []byte) (mssk *MasterSecretSignKey, err error) {
-	mssk=new(MasterSecretSignKey)
+	mssk = new(MasterSecretSignKey)
 	mssk.S = unpackPolyveclEta(b)
 	return mssk, nil
+}
+
+func (s *Signature) Serialize() []byte {
+	res := make([]byte, s.r*PackZByteLen+PackIByteLen+N/8+8)
+	offset := 0
+	for i := 0; i < s.r; i++ {
+		copy(res[offset:offset+PackZByteLen], packPolyveclGmte(s.z[i]))
+		offset += PackZByteLen
+	}
+	copy(res[offset:offset+PackIByteLen], packPolyvecmQ(s.I))
+	offset += PackIByteLen
+	signs := int64(0) // to denote the coff signal
+	mask := int64(1)
+	for i := 0; i < N/8; i++ {
+		res[offset] = 0
+		for j := 0; j < 8; j++ {
+			if s.c.coeffs[8*i+j] != 0 {
+				res[offset] |= byte(1 << j)
+				if s.c.coeffs[8*i+j] == -1 { //TODO(osy):this value is 1,-1,0?
+					signs |= mask
+				}
+				mask <<= 1
+			}
+		}
+		offset += 1
+	}
+	binary.BigEndian.PutUint64(res[offset:], uint64(signs))
+	return res
+}
+func DeserializeSignature(b []byte) (*Signature, error) {
+	//compute the r
+	res := new(Signature)
+	res.r = (len(b) - (PackIByteLen + N/8 + 8)) / PackZByteLen
+	if len(b) < res.r*PackZByteLen+PackIByteLen+N/8+8 {
+		return nil, errors.New("length of byte is wrongly")
+	}
+	offset := 0
+	res.z = make([]polyvecl, res.r)
+	for i := 0; i < res.r; i++ {
+		res.z[i] = unpackPolyveclGmte(b[offset : offset+PackZByteLen])
+		offset += PackZByteLen
+	}
+	res.I = unpackPolyvecmQ(b[offset : offset+PackIByteLen])
+	offset += PackIByteLen
+	signs := int64(binary.BigEndian.Uint64(b[offset+N/8:]))
+	if signs>>60 != 0 {
+		return nil, errors.New("fail to deserialize signature")
+	}
+	for i := 0; i < N/8; i++ {
+		for j := 0; j < 8; j++ {
+			if (b[offset+i]>>j)&0x01 == 1 {
+				res.c.coeffs[8*i+j] = 1
+				if signs&1 == 1 {
+					res.c.coeffs[8*i+j] = -1
+				}
+				signs >>= 1
+			}
+		}
+		//offset+=1
+	}
+	return res, nil
+
 }
