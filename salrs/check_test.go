@@ -16,9 +16,9 @@ func TestCheckTNorm(t *testing.T) {
 		}
 	}
 	want:=CheckTNorm(v)
-	got:=v.CheckNorm()
+	got:=v.CheckInQ()
 	if got!=want {
-		t.Errorf("CheckNorm(%v) = %v, want= %v",v,got,want)
+		t.Errorf("CheckInGmte(%v) = %v, want= %v",v,got,want)
 	}
 }
 func TestCheckZNorm(t *testing.T) {
@@ -30,21 +30,21 @@ func TestCheckZNorm(t *testing.T) {
 		}
 	}
 	want:=CheckZNorm(v)
-	got:=v.CheckNorm()
+	got:=v.CheckInGmte()
 	if got!=want {
-		t.Errorf("CheckNorm(%v) = %v, want= %v",v,got,want)
+		t.Errorf("CheckInGmte(%v) = %v, want= %v",v,got,want)
 	}
 }
-func TestCheckC(t *testing.T) {
+func TestCheckInOne(t *testing.T) {
 	 a:=NewPoly()
 	 for i:=0;i<N;i++{
 	 	a.coeffs[i]=randomInt64()
 	 	time.Sleep(3*time.Nanosecond)
 	 }
 	want:=CheckC(*a)
-	got:=a.Check()
+	got:=a.CheckInOne()
 	if got!=want {
-		t.Errorf("CheckC(%v) = %v, want= %v",a,got,want)
+		t.Errorf("CheckInOne(%v) = %v, want= %v",a,got,want)
 	}
 }
 func TestEqualC(t *testing.T) {

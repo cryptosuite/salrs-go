@@ -26,16 +26,6 @@ func CheckTNorm(t polyveck) (flag bool) {
 }
 
 
-func (t *polyveck) CheckNorm() bool {
-	for i := 0; i < K; i++ {
-		for j := 0; j < N; j++ {
-			if (t.vec[i].coeffs[j] > Q2) || (t.vec[i].coeffs[j] < -Q2) {
-				return false
-			}
-		}
-	}
-	return true
-}
 
 /*************************************************
  * Name:        check_z_norm
@@ -52,25 +42,14 @@ func CheckZNorm(v polyvecl) (flag bool) {
 	var f = true
 	for i = 0; i < L; i++ {
 		for j = 0; j < N; j++ {
-			if (v.vec[i].coeffs[j] > GammaMinusTwoEtaTheta) || (v.vec[i].coeffs[j] < -GammaMinusTwoEtaTheta) {
+			if (v.vec[i].coeffs[j] > GammaMinusTwoEtaTheta) ||
+				(v.vec[i].coeffs[j] < -GammaMinusTwoEtaTheta) {
 				//fmt.Println(v.vec[i].coeffs[j])
 				f = false
 			}
 		}
 	}
 	return f
-}
-
-func (v *polyvecl) CheckNorm() bool {
-	for i := 0; i < L; i++ {
-		for j := 0; j < N; j++ {
-			if (v.vec[i].coeffs[j] > GammaMinusTwoEtaTheta) || (v.vec[i].coeffs[j] < -GammaMinusTwoEtaTheta) {
-				//fmt.Println(v.vec[i].coeffs[j])
-				return false
-			}
-		}
-	}
-	return true
 }
 
 /*************************************************
@@ -90,33 +69,18 @@ func CheckC(c poly) (flag bool) {
 	for i = 0; i < N; i++ {
 		if (c.coeffs[i] == 1) || (c.coeffs[i] == (-1)) {
 			count++
-		} else if c.coeffs[i] != 0 {
+		} else if c.coeffs[i] != 0 { //if it not equal 0,-1,1
 			f = false
 		}
 	}
-	if count == 60 {
+	if count == 60 { //check the number of 1 and -1
 		f = true
 	} else {
 		f = false
 	}
 	return f
 }
-func (z *poly) CheckC() (flag bool) {
-	count := 0
-	flag = true
-	for i := 0; i < N; i++ {
-		if (z.coeffs[i] == 1) || (z.coeffs[i] == -1) {
-			count++
-		} else if z.coeffs[i] != 0 {
-			return false
-		}
-	}
-	if count == 60 {
-		return true
-	} else {
-		return false
-	}
-}
+
 
 /*************************************************
  * Name:        equal_c
@@ -138,14 +102,6 @@ func EqualC(c1 poly, c2 poly) (flag bool) {
 		}
 	}
 	return f
-}
-func (z *poly)EqualC(p *poly) bool {
-	for i:=0;i< N;i++{
-		if z.coeffs[i] != p.coeffs[i] {
-			return false
-		}
-	}
-	return true
 }
 
 /*************************************************
@@ -172,17 +128,7 @@ func EqualI(I1 polyvecm, I2 polyvecm) (flag bool) {
 	return f
 }
 
-func (v *polyvecm)Equal(p *polyvecm) bool {
-	for i:=0;i<M;i++{
-		if !v.vec[i].Equal(&p.vec[i]) {
-			return false
-		}
-	}
-	return true
-}
 
-/* TODO: whether here are some error about how to make a decision about two  polyveck equals
-   and there should a method of polyveck which can judge two polyveck is equal  */
 func Equaldpk(dpk1 DerivedPubKey, dpk2 DerivedPubKey) (flag bool) {
 	var i, j, ii int
 	var f bool
@@ -204,16 +150,4 @@ func Equaldpk(dpk1 DerivedPubKey, dpk2 DerivedPubKey) (flag bool) {
 		}
 	}
 	return f
-}
-
-func (dpk *DerivedPubKey) Equal(k *DerivedPubKey) bool{
-	if !dpk.t.Equal(&k.t)|| len(dpk.c) != len(k.c){
-		return false
-	}
-	for i:=0;i<len(dpk.c);i++{
-		if dpk.c[i]!=k.c[i] {
-			return false
-		}
-	}
-	return true
 }

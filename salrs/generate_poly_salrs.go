@@ -1,8 +1,10 @@
 package salrs
 
 import (
+	"fmt"
 	"golang.org/x/crypto/sha3"
 )
+
 // TODO:lack of handling error
 /*************************************************
 * Name:        rej_uniform
@@ -332,6 +334,23 @@ func expandMatA() (matA [K]polyvecl) {
 	}
 	return mat
 }
+func generateMatrixAFromCRS() (*[K]polyvecl, error) {
+	res := new([K]polyvecl)
+	var seed []byte
+	var err error
+	cstrBytes := []byte(cstr) // TODO:this transfer process should be encode/decode with hex.EncodeToString and hex.DecodeString
+	for i := 0; i < len(cstrBytes); i++ {
+		seed = append(seed, cstrBytes[i])
+	}
+	pos := 0
+	for i := 0; i < K; i++ {
+		seed, pos, err = generatePolyVecLFromSeed(seed, pos, generatePolyQFromSeed, &res[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
 
 /*************************************************
  * Name:        expand_V
@@ -355,6 +374,17 @@ func expandV(KK []byte) (V polyvecl) {
 		c.Read(KK)
 	}
 	return v
+}
+func expandV1(kk []byte) (*polyvecl, error) {
+	temp := sha3.Sum256(kk)
+	seed := make([]byte, len(temp))
+	copy(seed, temp[:])
+	res := new(polyvecl)
+	_, _, err := generatePolyVecLFromSeed(seed, 0, generatePolyEtaFromSeed, res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 /*************************************************
@@ -400,6 +430,152 @@ func generateLEta() (s polyvecl) {
 		c.Read(seedbuf)
 	}
 	return S
+}
+
+// generatePolyVecLFromSeed requires that the seed is not nil and the length of given seed meets the length demand
+//  if the polyvecl is nil, this function will apply for a new one.
+func generatePolyVecLFromSeed(seed []byte, pos int, fn generatePoly, res *polyvecl) ([]byte, int, error) {
+	if seed == nil || len(seed) < 32 {
+		return nil, -1, fmt.Errorf("the length of seed is %v, but expected %v.", len(seed), 32)
+	}
+	var err error
+	temp := make([]byte, len(seed))
+	copy(temp, seed)
+	if res == nil {
+		res = new(polyvecl)
+	}
+	for i := 0; i < L; i++ {
+		temp, pos, err = fn(temp, pos, &res.vec[i]) //update seed and current position
+		if err != nil {
+			return seed, 0, err
+		}
+	}
+	return temp, pos, nil
+}
+
+type generatePoly func([]byte, int, *poly) ([]byte, int, error)
+
+// the seed will be extended if the pos more than the length of sedd
+func generatePolyEtaFromSeed(seed []byte, pos int, p *poly) ([]byte, int, error) {
+	if seed == nil || len(seed) < 32 {
+		return nil, -1, fmt.Errorf("the length of seed is %v, but expected %v.", len(seed), 32)
+	}
+	if p == nil {
+		p = NewPoly()
+	}
+	index := 0
+	//reject sample
+	for {
+		if index >= N {
+			break
+		}
+		if pos >= len(seed) { //extend the seed if not enough
+			extend := sha3.Sum256(seed[len(seed)-32:])
+			seed = append(seed, extend[:]...)
+		}
+
+		temp0 := int64(seed[pos] & 0x07) // lowest three bits
+		temp1 := int64(seed[pos] >> 5)   // highest three bits
+		pos++
+		if temp0 <= 2*Eta {
+			p.coeffs[index] = Eta - temp0
+			index++
+		}
+		if temp1 <= 2*Eta && index < N {
+			p.coeffs[index] = Eta - temp1
+			index++
+		}
+
+	}
+	return seed, pos, nil
+}
+func generatePolyQFromSeed(seed []byte, pos int, p *poly) ([]byte, int, error) {
+	if p == nil {
+		p = NewPoly()
+	}
+	index := 0
+	//reject sample
+	for {
+		if index >= N {
+			break
+		}
+		if pos+4 >= len(seed) { //extend the seed if not enough
+			extend := sha3.Sum256(seed[len(seed)-32:])
+			seed = append(seed, extend[:]...)
+		}
+
+		temp := int64(0)
+		for i := 0; i < 4; i++ {
+			temp |= int64(seed[pos]) << (i * 8)
+			pos++
+		}
+		temp |= int64(seed[pos]>>4) << 32 // highest 4 bits
+		pos++
+
+		if temp <= Q { //TODO:it can equal to Q?
+			p.coeffs[index] = (Q-1)/2 - temp
+			index++
+		}
+	}
+	return seed, pos, nil
+}
+func generatePolyGammmaFromSeed(seed []byte, pos int, p *poly) ([]byte, int, error) {
+	if p == nil {
+		p = NewPoly()
+	}
+	index := 0
+	//reject sample
+	for {
+		if index >= N {
+			break
+		}
+		if pos+2 >= len(seed) { //extend the seed if not enough
+			extend := sha3.Sum256(seed[len(seed)-32:])
+			seed = append(seed, extend[:]...)
+		}
+
+		temp := int64(seed[pos]) //0-7
+		pos++
+		temp |= int64(seed[pos]) << 8 //8-15
+		pos++
+		temp |= int64(seed[pos]>>3) << 16 // highest 5 bits,16-20
+		pos++
+
+		if temp <= 2*Gamma {
+			p.coeffs[index] = Gamma - temp
+			index++
+		}
+	}
+	return seed, pos, nil
+}
+func generatePolyGmteFromSeed(seed []byte, pos int, p *poly) ([]byte, int, error) {
+	if p == nil {
+		p = NewPoly()
+	}
+	index := 0
+	//reject sample
+	for {
+		if index >= N {
+			break
+		}
+		if pos+2 >= len(seed) { //extend the seed if not enough
+			extend := sha3.Sum256(seed[len(seed)-32:])
+			seed = append(seed, extend[:]...)
+		}
+
+		temp := int64(seed[pos]) //0-7
+		pos++
+		temp |= int64(seed[pos]) << 8 //8-15
+		pos++
+		temp |= int64(seed[pos]>>3) << 16 // highest 5 bits,16-20
+		pos++
+
+		if temp <= 2*Gamma-4*Theta*Eta { //TODO:这个判断可能有点问题，先改过来了
+			p.coeffs[index] = Gamma - 2*Theta*Eta - temp
+			index++
+		}
+	}
+	return seed, pos, nil
 }
 
 /*************************************************
@@ -473,6 +649,24 @@ func hm(t polyveck) (H [M]polyvecl) {
 		}
 	}
 	return h
+}
+func hm1(t *polyveck) (*[M]polyvecl, error) {
+	var err error
+	res := &[M]polyvecl{}
+	seedpack := t.packQ()
+	seedbuf := sha3.Sum256(seedpack)
+	seed := []byte(cstr) // TODO:this transfer process should be encode/decode with hex.EncodeToString and hex.DecodeString
+	for i := 0; i < len(seedbuf); i++ {
+		seed = append(seed, seedbuf[i])
+	}
+	pos := 0
+	for i := 0; i < M; i++ {
+		seed, pos, err = generatePolyVecLFromSeed(seed, pos, generatePolyQFromSeed, &res[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 /*************************************************
@@ -581,4 +775,57 @@ func hTheta(m []byte, mlen int, dpkring *DpkRing, w polyveck, v polyvecm, I poly
 		signs >>= 1
 	}
 	return C
+}
+
+func hTheta1(m []byte, mlen int, dpkring *DpkRing, w *polyveck, v *polyvecm, I *polyvecm) (*poly, error) {
+	var inbuf []byte
+	// h(m)
+	tmpbuf := sha3.Sum256(m[:mlen])
+	for i := 0; i < len(tmpbuf); i++ {
+		inbuf = append(inbuf, tmpbuf[i])
+	}
+	//dpk
+	for i := 0; i < dpkring.R; i++ {
+		inbuf = append(inbuf, dpkring.Dpk[i].Serialize()...)
+	}
+	//w
+	inbuf = append(inbuf, w.packQ()...)
+	//v
+	inbuf = append(inbuf, v.packQ()...)
+	//I
+	inbuf = append(inbuf, I.packQ()...)
+
+	outbuf := sha3.Sum256(inbuf)
+
+	res := NewPoly()
+	// inside-out
+	sign := int64(0)
+	sign |= int64(outbuf[23] >> 4) // highest 4 bits
+	for i := 0; i < 7; i++ {
+		sign |= int64(outbuf[24+i] << (4 + 8*i))
+	}
+	// use the outbuf as seed
+	seed:=make([]byte,32)
+	copy(seed,outbuf[:])
+	var err error
+	pos:=0
+	for i := 196; i < 256; i++ {
+		index:=-1
+		index, seed, pos, err = randomIntFromSeed(seed, pos, i+1)
+		if err!=nil{
+			return nil,err
+		}
+		if sign&0x01 == 0 {
+			res.coeffs[i] = -1
+		} else {
+			res.coeffs[i] = 1
+		}
+		sign >>= 1
+		res.coeffs[index], res.coeffs[i] = res.coeffs[i], res.coeffs[index]
+	}
+	if !res.CheckInOne(){
+		return nil,fmt.Errorf("the h theta has logic error")
+	}
+
+	return res,nil
 }
