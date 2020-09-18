@@ -45,7 +45,8 @@ func TestGenerateMasterKey(t *testing.T) {
 	}
 }
 func TestDeseralizeMasterPubKey(t *testing.T) {
-	mpk, _, _, _, err := GenerateMasterKey([]byte{97, 98, 99})
+	seed, err := hex.DecodeString("dfa0adce08219616f2cf61812b93108793349b2e60235fdee1dc30f4ce07b83a")
+	mpk, _, _, _, err := GenerateMasterKey(seed)
 	if err != nil {
 		log.Fatal(err)
 	}
